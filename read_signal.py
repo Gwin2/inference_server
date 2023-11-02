@@ -164,3 +164,4 @@ def main(top_block_cls=get_center_freq, options=None):
 
 if __name__ == '__main__':
     main()
+    print(1)
