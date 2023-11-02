@@ -1,13 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-#
-# SPDX-License-Identifier: GPL-3.0
-#
-# GNU Radio Python Flow Graph
-# Title: get_center_freq
-# GNU Radio version: 3.8.1.0
-
 from gnuradio import blocks
 from gnuradio import gr
 from gnuradio.filter import firdes
