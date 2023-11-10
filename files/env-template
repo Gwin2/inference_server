@@ -14,6 +14,7 @@ hack2 = ''
 # 2.4
 #################
 hack1 = ''
+path_to_ny_nn = 'S:\PyCharm\inference\NN\model.pt'
 path_to_NN='/home/orangepi/DRONE_DETECTION/NN_THRESHOLD/release/NPU/simplenet.weak.v2.4.rknn'
 #################
 #5.2
