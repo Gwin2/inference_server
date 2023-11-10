@@ -11,16 +11,14 @@ from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import json
-import wiringpi as wpi
-from wiringpi import GPIO
 global flow
 flow = 0
 app = Flask(__name__)
-wpi.wiringPiSetup()
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), '.env-template')
 load_dotenv(dotenv_path)
 
+path_to_NN = os.getenv('path_to_my_nn')
 local_host = os.getenv('lochost')
 local_port = os.getenv('locport')
 master_server_ip = os.getenv('master_server_ip')
@@ -46,20 +44,6 @@ data_queue = [None]*len(freqs)
 # Создание планировщика
 scheduler = BackgroundScheduler(daemon=True)
 scheduler.start()
-
-def wpi_on_boot():
-	for pin in pins:
-		wpi.pinMode(pin, GPIO.OUTPUT)
-		wpi.digitalWrite(pin, GPIO.LOW)
-
-	time.sleep(3)
-
-	for pin in pins:
-		wpi.digitalWrite(pin, GPIO.HIGH)
-
-	wpi.pinMode(pin_jammer, GPIO.OUTPUT)
-	wpi.digitalWrite(pin_jammer, GPIO.LOW)
-	print('wpi_on_boot')
 
 
 def register_module():
@@ -126,42 +110,6 @@ def heartbeat():
     except Exception:
         print('heartbeat не был отправлен из-за отстутствия сервера в поле видимости')
 
-def light(light_lens):
-    global flow
-   # flow = 0
-    print("Количество светодиодов получены: ", light_lens)
-    length = max(light_lens.values())
-    if length > 0:
-        for pin in pins[:length]:
-            wpi.digitalWrite(pin, GPIO.LOW)
-        if length >= len_threshold:
-            print('Включили глушилку!!!')
-            flow = 1
-            wpi.digitalWrite(pin_jammer, GPIO.HIGH)
-            for pin in pins:
-                wpi.digitalWrite(pin, GPIO.HIGH)
-            wpi.digitalWrite(pins[len(pins) - 2], GPIO.LOW)
-            wpi.digitalWrite(pins[len(pins) - 1], GPIO.LOW)
-            time.sleep(time_to_jam)
-            # Глушилка включилась. Теперь нужно включить задержку скрипта модуля, причем
-            # таким образом, чтобы сама глушилка отработала N секунд, а скрипт модуля
-            # не принимал данные N+M секунду, где N - примерно пара минут, а M - примерно
-            # 10 секунд. Нужно это для того, чтобы за 10 секунд после глушилки скрипты
-            # отсканировали чистую местность и привели данные, которые они отправляют, в порядок
-            # В качестве N и M взять time_to_jam и time_to_fresh из .env
-            # (они уже загружены в этот скрипт).
-
-            print('Время вышло. Выключили глушилку!!!')
-            wpi.digitalWrite(pin_jammer, GPIO.LOW)
-            wpi.digitalWrite(pins[len(pins) - 2], GPIO.HIGH)
-            wpi.digitalWrite(pins[len(pins) - 1], GPIO.HIGH)
-            time.sleep(time_to_fresh)
-            flow = 0
-
-
-    if length != 10:
-        for pin in pins[length:]:
-            wpi.digitalWrite(pin, GPIO.HIGH)
 
 
 def agregate_data():
@@ -194,7 +142,6 @@ def agregate_data():
                 data_queue[i] = None
 
             print('После отправки data_queue выглядит так:', data_queue)
-            light(light_lens)
             if count == 0:
                 print('Следующие данные будут отправлены через {0} секунд'.format(passive_interval_to_send))
                 for i in range(passive_interval_to_send):
@@ -259,7 +206,6 @@ def process_data():
 mac_address = get_mac_address()
 
 if __name__ == '__main__':
-	wpi_on_boot() # Настройка пинов в правильные положения. вкл и выкл светодиодов на секунду.
 	register_module() # Регистрация модуля на сервере
 	update_gps_coordinates()
 	child = threading.Thread(target=agregate_data)  # Запуск агрегатора данных и отправки на мастер-сервер.
