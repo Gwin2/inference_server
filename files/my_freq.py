@@ -218,7 +218,6 @@ def work(lvl):
     global vals
     outputs = []
 
-
     y = np.array(lvl).ravel()
     signal_arr = np.concatenate((signal_arr, y), axis=None)
 

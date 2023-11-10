@@ -1,11 +1,6 @@
 #################
 # GENERAL
 #################
-len_threshold=8 #defaule is 5 lights
-pins=[11, 4, 3, 14, 12, 0, 1, 2, 5, 8]
-pin_jammer=7
-time_to_jam=6 #default is 5 minutes
-time_to_fresh=4 #default is 10 sec.
 #################
 # 1.2
 #################
@@ -15,7 +10,6 @@ hack2 = ''
 #################
 hack1 = ''
 path_to_ny_nn = 'S:\PyCharm\inference\NN\model.pt'
-path_to_NN='/home/orangepi/DRONE_DETECTION/NN_THRESHOLD/release/NPU/simplenet.weak.v2.4.rknn'
 #################
 #5.2
 #################
@@ -26,14 +20,9 @@ hack0 = ''
 
 
 #################
-# Module server
+# Inference server
 #################
-lochost=localhost
-locport=5000
-gpsport=/dev/ttyS4
-master_server_ip=192.168.2.137
-master_server_port=3000
-latitude= 
-longitude=
-active_interval_to_send = 1
-passive_interval_to_send = 60
+local_host=localhost
+local_port=5000
+to_server_ip=192.168.2.10
+to_server_port=8080

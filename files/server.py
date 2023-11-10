@@ -3,6 +3,7 @@
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
 import requests
+import torch
 import subprocess
 import threading
 import time
@@ -10,52 +11,87 @@ import os
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+import numpy as np
+import matplotlib as plt
+import io
+import cv2
 import json
-global flow
-flow = 0
+
 app = Flask(__name__)
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env-template')
 load_dotenv(dotenv_path)
-
 path_to_NN = os.getenv('path_to_my_nn')
-local_host = os.getenv('lochost')
-local_port = os.getenv('locport')
-master_server_ip = os.getenv('master_server_ip')
-master_server_port = os.getenv('master_server_port')
-pins = json.loads(os.getenv('pins'))
-pin_jammer = int(os.getenv('pin_jammer'))
-len_threshold = int(os.getenv('len_threshold'))
-time_to_jam = int(os.getenv('time_to_jam'))
-time_to_fresh = int(os.getenv('time_to_fresh'))
-latitude = float(os.getenv('latitude'))
-longitude = float(os.getenv('longitude'))
-active_interval_to_send = int(os.getenv('active_interval_to_send'))
-passive_interval_to_send = int(os.getenv('passive_interval_to_send'))
+local_host = os.getenv('local_host')
+local_port = os.getenv('local_port')
+server_ip = os.getenv('to_server_ip')
+server_port = os.getenv('to_server_port')
 
-
-flag = 0
-
-max_len_bulk = 50
-bulk_data = []
-
+url_local_server = "http://{0}:{1}/add_data".format(local_host, local_port)
+pre_data = []
 freqs = [1200, 2400, 5800]
 data_queue = [None]*len(freqs)
-# Создание планировщика
 scheduler = BackgroundScheduler(daemon=True)
 scheduler.start()
 
 
+def sig2pic(path_to_data, filename, figsize=(16, 8), dpi=80):
+    try:
+        with open(path_to_data + filename, 'rb') as file:
+            tmp = np.frombuffer(file.read(), dtype=np.complex64)
+        signal = tmp
+        fig1 = plt.figure(figsize=figsize)
+        plt.axes(ylim=(-1, 1))
+        sigr = signal.real
+        sigi = signal.imag
+
+        plt.plot(sigr, color='black')
+        plt.gca().set_axis_off()
+        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        buf1 = io.BytesIO()
+        fig1.savefig(buf1, format="png", dpi=dpi)
+        buf1.seek(0)
+        img_arr1 = np.frombuffer(buf1.getvalue(), dtype=np.uint8)
+        buf1.close()
+        img1 = cv2.imdecode(img_arr1, 1)
+        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+        plt.close()
+
+        fig2 = plt.figure(figsize=figsize)
+        plt.axes(ylim=(-1, 1))
+        sigr = signal.real
+        sigi = signal.imag
+
+        plt.plot(sigi, color='black')
+        plt.gca().set_axis_off()
+        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        buf = io.BytesIO()
+        fig2.savefig(buf, format="png", dpi=dpi)
+        buf.seek(0)
+        img_arr = np.frombuffer(buf.getvalue(), dtype=np.uint8)
+        buf.close()
+        img = cv2.imdecode(img_arr, 1)
+        img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        plt.close()
+        img = np.array([img1, img2])
+        return img
+    except Exception as e:
+        print(str(e))
+        return None
+
+'''
 def register_module():
     try:
-        url = "http://{0}:{1}/module/register/{2}".format(master_server_ip, master_server_port, mac_address)
+        url = "http://{0}:{1}/module/register/{2}".format(server_ip, server_port, mac_address)
         response = requests.post(url)
         response.raise_for_status()  # Проверка успешности запроса
         print("Модуль зарегистрирован успешно = ", mac_address)
     except requests.exceptions.RequestException as e:
         flag = 1
         print("Ошибка при регистрации модуля:" + str(e), mac_address)
-
+'''
 
 def get_mac_address(interface='eth0'):
     try:
@@ -69,7 +105,7 @@ def get_mac_address(interface='eth0'):
     except Exception as e:
         print("Ошибка при получении MAC-адреса:" + str(e))
         return None
-
+'''
 #@app.route('/get_gps', methods = ['POST'])
 @scheduler.scheduled_job(IntervalTrigger(minutes=1))
 def update_gps_coordinates():
@@ -108,11 +144,11 @@ def heartbeat():
         else:
             print('heartbeat не был отправлен по какой-то причине')
     except Exception:
-        print('heartbeat не был отправлен из-за отстутствия сервера в поле видимости')
+        print('heartbeat не был отправлен из-за отстутствия сервера в поле видимости')'''
 
 
 
-def agregate_data():
+def add_data():
     print('Перед Вайл')
     while True:
 
@@ -136,7 +172,7 @@ def agregate_data():
                 "data": data
             }
             print('На сервер-мастер будет отправлена следующая информация: ', ModuleDataSingleV2)
-            send_to_master(ModuleDataSingleV2, flag)
+            '''send_to_master(ModuleDataSingleV2, flag)
 
             for i in range(len(freqs)):
                 data_queue[i] = None
@@ -151,9 +187,9 @@ def agregate_data():
                     time.sleep(1)
             else:
                 print('1c')
-                time.sleep(active_interval_to_send)
-
-def send_to_master(ModuleDataSingleV2, flag):
+                time.sleep(active_interval_to_send)'''
+'''
+def send_to(ModuleDataSingleV2, flag):
     try:
         if flag == 0:
             response = requests.post("http://{0}:{1}/data/single/{2}".format(master_server_ip, master_server_port, mac_address), json=ModuleDataSingleV2)
@@ -182,9 +218,9 @@ def send_to_master(ModuleDataSingleV2, flag):
         print('Данные не были отправлены по причине отсутствия сервера в поле видимости')
 
 
-@app.route('/process_data', methods = ['POST'])
+@app.route('/process_data', methods = ['GET'])
 def process_data():
-    data = request.json
+    data = requests.get(url_local_server)
     if flow == 0:
 
         print('Received data: ', data)
@@ -203,12 +239,12 @@ def process_data():
         result = {"message" : "Data processed successfully"}
         return jsonify(result)
 
-mac_address = get_mac_address()
+mac_address = get_mac_address()'''
 
 if __name__ == '__main__':
-	register_module() # Регистрация модуля на сервере
-	update_gps_coordinates()
-	child = threading.Thread(target=agregate_data)  # Запуск агрегатора данных и отправки на мастер-сервер.
+	#register_module() # Регистрация модуля на сервере
+	#update_gps_coordinates()
+	child = threading.Thread(target=add_data)  # Запуск агрегатора данных и отправки на мастер-сервер.
 	child.daemon = True
 	child.start()
 
