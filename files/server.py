@@ -16,9 +16,9 @@ import matplotlib as plt
 import io
 import cv2
 import json
+from json import JSONEncoder
 
 app = Flask(__name__)
-
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env-template')
 load_dotenv(dotenv_path)
 path_to_NN = os.getenv('path_to_my_nn')
@@ -34,7 +34,6 @@ freqs = [2400]
 data_queue = [None]*len(freqs)
 #scheduler = BackgroundScheduler(daemon=True)
 #scheduler.start()
-
 
 def sig2pic(data, figsize=(16, 8), dpi=80):
     try:
@@ -132,11 +131,11 @@ def softmax(x):
 @app.route('/receive_data', methods = ['POST'])
 def receive_data():
     print('Перед Вайл')
-    data = requests.json
-    freq = data['freq']
-    img = np.asarray(sig2pic(data['data']), dtype=np.float32)
+    data = json.loads(requests.json)
+    freq = int(data['freq'])
+    img = np.asarray(sig2pic(np.asarray(data['data'])), dtype=np.float32)
     outputs = model(img.to(device))
-    print('TOKEN' + str(data['token']))
+    print('TOKEN' + str(int(data['token'])))
     print('OUTPUTS:')
     print(outputs)
     label = np.argmax(outputs, axis=2)[0][0]

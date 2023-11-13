@@ -22,7 +22,7 @@ hack0 = ''
 #################
 # Inference server
 #################
-local_host=localhost
+local_host=192.168.2.4
 local_port=5000
 to_server_ip=192.168.2.10
 to_server_port=8080

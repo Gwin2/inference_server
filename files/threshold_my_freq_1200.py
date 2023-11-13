@@ -45,6 +45,16 @@ signal_arr = []
 '''
 
 
+class NumpyArrayEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NumpyArrayEncoder, self).default(obj)
+
+
 def send_data(sig):
     global token
     data_to_send = {
@@ -52,7 +62,8 @@ def send_data(sig):
                     "data": np.array(sig, dtype=np.complex64),
                     "token": token
     }
-    response = requests.post("http://{0}:{1}/receive_data".format(localhost, localport), json=data_to_send)
+    mod_data_to_send = json.dumps(data_to_send, cls=NumpyArrayEncoder)
+    response = requests.post("http://{0}:{1}/receive_data".format(localhost, localport), json=mod_data_to_send)
     if response.status_code == 200:
         print('TOKEN' + str(token))
         token += 1
