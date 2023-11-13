@@ -7,7 +7,6 @@
 # GNU Radio Python Flow Graph
 # Title: get_center_freq
 # GNU Radio version: 3.8.1.0
-
 from gnuradio import blocks
 from gnuradio import gr
 from gnuradio.filter import firdes
@@ -26,7 +25,6 @@ import wiringpi as wpi
 from wiringpi import GPIO
 
 from dotenv import load_dotenv
-
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)

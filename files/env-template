@@ -9,7 +9,7 @@ hack2 = ''
 # 2.4
 #################
 hack1 = ''
-path_to_ny_nn = 'S:\PyCharm\inference\NN\model.pt'
+path_to_my_nn = 'S:\PyCharm\inference\NN\model.pt'
 #################
 #5.2
 #################

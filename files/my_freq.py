@@ -1,59 +1,22 @@
-
-# this module will be imported in the into your flowgraph
-from gnuradio import gr
 import time
 from scipy.fftpack import fft, fftfreq
 import numpy as np
 from scipy.signal import find_peaks, spectrogram
 from scipy.signal.windows import hann
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import os
 import psutil
 import sys
-
 import platform
-from rknnlite.api import RKNNLite
-
-import wiringpi as wpi
-from wiringpi import GPIO
-
 import requests
 import json
 from dotenv import load_dotenv
 
-
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
-##############################
-# wiringPi
-##############################
-
-wpi.wiringPiSetup()
-
-##############################
-# RKNN
-##############################
-
-DEVICE_COMPATIBLE_NODE = '/proc/device-tree/compatible'
-
-RK3588_MODEL = {
-'path': os.getenv('path_to_NN'),
-'model': None,
-'split_size': 50_000,
-'N_predictions': 40,
-'N_samples_confidence_threshold': 0.65,
-}
-
-RK3588_MODEL['model'] = RKNNLite()
-
-try:
-	ret1 = RK3588_MODEL['model'].load_rknn(RK3588_MODEL['path'])
-	assert(ret1 == 0)
-except Exception as e:
-	print(e)
-
-ret2 = RK3588_MODEL['model'].init_runtime(core_mask=RKNNLite.NPU_CORE_0)
-assert(ret2 == 0)
+localhost = os.getenv('lochost')
+localport = os.getenv('locport')
+split_size = 1_000_000
 
 ##############################
 # HYPERPARAMETERS
@@ -68,18 +31,14 @@ signal_num = 10
 #if not os.path.exists(signal_dir):
 #    os.mkdir(signal_dir)
 
-
 reading_signal_delay = 0
 iterations = 3  # read signal iterations
 height_threshold = 100
 
 weak_avg_amount = 70
 weak_samples_confidence = 0.50
-#classes = {0: 'noise', 1: 'DJI', 2: 'other', 3: 'for weak'}
-classes = {0: 'noise', 1: 'DJI_video', 2: 'DJI_control', 3: 'WIFI'}
-
-#pins = [11, 4, 3, 14, 12, 0, 1, 2, 5, 7]
-pins = [11, 4, 3, 14, 12, 0, 1, 2, 5, 7]
+classes = {0: 'drone', 1: 'noise', 2: 'wifi'}
+token = 1
 
 on_state = 0
 off_state = 1
@@ -116,10 +75,7 @@ avg_confidence = 0
 strong_confidence_threshold = 0.6
 weak_confidence_threshold = 0.85
 current_pin = 0
-
 vals = []
-############################### support functions
-##############################
 
 def calc_running_amp(sig):
     global amp_slice_size
@@ -148,30 +104,20 @@ def compute_signal_distance(signal: np.array) -> float:
     return sig_dist
 
 
-def send_data(sig_dist):
-	len_threshold = int(os.getenv('len_threshold'))
-	localhost = os.getenv('lochost')
-	localport = os.getenv('locport')
-	length = int(np.sum(np.where(p2p_border <= sig_dist, 1, 0)))
-
-	if length >= len_threshold:
-		trigger = True
-	else:
-		trigger = False
-
-	data_to_send = {
-					"freq": 2400,
-					"amplitude": 55,
-					"triggered": trigger,
-					"light_len": length
-			}
-
-	response = requests.post("http://{0}:{1}/process_data".format(localhost, localport), json=data_to_send)
-
-	if response.status_code == 200:
-		print("Данные успешно отправлены и приняты!")
-	else:
-		print("Ошибка при отправке данных: ", response.status_code)
+def send_data(sig):
+    global token
+    data_to_send = {
+                    "freq": 2400,
+                    "data": np.array(sig, dtype=np.complex64),
+                    "token": token
+    }
+    response = requests.post("http://{0}:{1}/receive_data".format(localhost, localport), json=data_to_send)
+    if response.status_code == 200:
+        print('TOKEN' + str(token))
+        token += 1
+        print("Данные успешно отправлены и приняты!")
+    else:
+        print("Ошибка при отправке данных: ", response.status_code)
 
 
 ##############################
@@ -179,7 +125,6 @@ def send_data(sig_dist):
 ##############################
 
 def work(lvl):
-
     global f_base
     global f_step
     global f_roof
@@ -220,18 +165,19 @@ def work(lvl):
 
     y = np.array(lvl).ravel()
     signal_arr = np.concatenate((signal_arr, y), axis=None)
+    print(signal_arr.shape)
 
     if f <= f_roof:
         f = f_base
         signal_arr = []
-        send_data(np.max(np.array(vals)))
+        #send_data(np.max(np.array(vals)))
         vals = []
         return f, EOCF
     else:
         label = None
-        if len(signal_arr) >= RK3588_MODEL['split_size']:  # the signal length `soft` constraint
-            
-            sig = np.array([signal_arr.real[0:RK3588_MODEL['split_size']], signal_arr.imag[0:RK3588_MODEL['split_size']]], dtype=np.float32)
+        if len(signal_arr) >= split_size:  # the signal length `soft` constraint
+            send_data(signal_arr[:split_size])
+            '''sig = np.array([signal_arr.real[0:RK3588_MODEL['split_size']], signal_arr.imag[0:RK3588_MODEL['split_size']]], dtype=np.float32)
             running_amp = calc_running_amp(sig)
             # feeds the input signal into weak classifier
             outputs = RK3588_MODEL['model'].inference(inputs=[sig])
@@ -275,9 +221,8 @@ def work(lvl):
                 print('!!!' * 30, f)
                 vals.append(weak_avg_amp)
             else:
-                vals.append(0)
+                vals.append(0)'''
             f += f_step
-
             weak_ctr = 0
             weak_avg_ctr = 0
         return f, EOCF

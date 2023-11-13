@@ -24,27 +24,27 @@ load_dotenv(dotenv_path)
 path_to_NN = os.getenv('path_to_my_nn')
 local_host = os.getenv('local_host')
 local_port = os.getenv('local_port')
-server_ip = os.getenv('to_server_ip')
-server_port = os.getenv('to_server_port')
+classes = {0: 'drone', 1: 'noise', 2: 'wifi'}
+#server_ip = os.getenv('to_server_ip')
+#server_port = os.getenv('to_server_port')
 
-url_local_server = "http://{0}:{1}/add_data".format(local_host, local_port)
+url_local_server = "http://{0}:{1}/receive_data".format(local_host, local_port)
 pre_data = []
-freqs = [1200, 2400, 5800]
+freqs = [2400]
 data_queue = [None]*len(freqs)
-scheduler = BackgroundScheduler(daemon=True)
-scheduler.start()
+#scheduler = BackgroundScheduler(daemon=True)
+#scheduler.start()
 
 
-def sig2pic(path_to_data, filename, figsize=(16, 8), dpi=80):
+def sig2pic(data, figsize=(16, 8), dpi=80):
     try:
-        with open(path_to_data + filename, 'rb') as file:
-            tmp = np.frombuffer(file.read(), dtype=np.complex64)
-        signal = tmp
+        #with open(path_to_data + filename, 'rb') as file:
+            #tmp = np.frombuffer(file.read(), dtype=np.complex64)
+        signal = data
         fig1 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
         sigr = signal.real
         sigi = signal.imag
-
         plt.plot(sigr, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -62,7 +62,6 @@ def sig2pic(path_to_data, filename, figsize=(16, 8), dpi=80):
         plt.axes(ylim=(-1, 1))
         sigr = signal.real
         sigi = signal.imag
-
         plt.plot(sigi, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -93,7 +92,7 @@ def register_module():
         print("Ошибка при регистрации модуля:" + str(e), mac_address)
 '''
 
-def get_mac_address(interface='eth0'):
+'''def get_mac_address(interface='eth0'):
     try:
         result = os.popen('sudo ifconfig ' + interface).read()
         mac_index = result.find('ether')  # Индекс начала строки с MAC-адресом
@@ -106,30 +105,8 @@ def get_mac_address(interface='eth0'):
         print("Ошибка при получении MAC-адреса:" + str(e))
         return None
 '''
-#@app.route('/get_gps', methods = ['POST'])
-@scheduler.scheduled_job(IntervalTrigger(minutes=1))
-def update_gps_coordinates():
-    #data_gps = request.json
-    result = {
-        'latitude': latitude,
-        'longitude': longitude
-    }
-    try:
-        url = "http://{0}:{1}/data/gps/{2}".format(master_server_ip, master_server_port, mac_address)
-        response = requests.post(url, json=result)
-        if response.status_code == 200:
-            print('gps успешно отправлен')
-        elif response.status_code == 404:
-            print('gps не был отправлен из-за отсутствия регистрации модуля на сервере')
-            print('Будет выполнена еще одна регистрация')
-            register_module()  # Регистрируем модуль
-        else:
-            print('gps не был отправлен по какой-то причине')
 
-    except Exception:
-        print('gps не были отправлены из-за отстутствия сервера в поле видимости')
-    return result
-
+'''
 @scheduler.scheduled_job(IntervalTrigger(seconds=20))
 def heartbeat():
     try:
@@ -144,50 +121,30 @@ def heartbeat():
         else:
             print('heartbeat не был отправлен по какой-то причине')
     except Exception:
-        print('heartbeat не был отправлен из-за отстутствия сервера в поле видимости')'''
+        print('heartbeat не был отправлен из-за отстутствия сервера в поле видимости')
+'''
 
+def softmax(x):
+    """Compute softmax values for each sets of scores in x."""
+    e_x = np.exp(x - np.max(x))
+    return e_x / e_x.sum()
 
-
-def add_data():
+@app.route('/receive_data', methods = ['POST'])
+def receive_data():
     print('Перед Вайл')
-    while True:
+    data = requests.json
+    freq = data['freq']
+    outputs = model(sig2pic(data['data']))
+    print('TOKEN' + str(data['token']))
+    print('OUTPUTS:')
+    print(outputs)
+    label = np.argmax(outputs, axis=2)[0][0]
+    print('LABEL: ' + str(label))
+    probability = softmax(outputs[0][0])[label]
+    print(classes[label], round(probability, 2), int(freq))
+    result = {'message': 'Data inference successfully'}
+    return jsonify(result)
 
-        count = 0
-        light_lens = {}
-        data = []
-        ModuleDataSingleV2 = {}
-
-        if any(item is not None for item in data_queue):
-            for item in data_queue:
-                if item is not None:
-                    light_lens[item["freq"]] = item.pop("light_len", None)
-                    if item["triggered"]:
-                         count += 1
-                    data.append(item)
-
-            now = datetime.utcnow()- timedelta(seconds=2)
-            now = now.strftime("%m/%d/%Y %H:%M:%S")
-            ModuleDataSingleV2 = {
-                "registeredAt" : now,
-                "data": data
-            }
-            print('На сервер-мастер будет отправлена следующая информация: ', ModuleDataSingleV2)
-            '''send_to_master(ModuleDataSingleV2, flag)
-
-            for i in range(len(freqs)):
-                data_queue[i] = None
-
-            print('После отправки data_queue выглядит так:', data_queue)
-            if count == 0:
-                print('Следующие данные будут отправлены через {0} секунд'.format(passive_interval_to_send))
-                for i in range(passive_interval_to_send):
-                    drone = has_true = any(item is not None and item.get('triggered') is True for item in data_queue)
-                    if drone:
-                        break
-                    time.sleep(1)
-            else:
-                print('1c')
-                time.sleep(active_interval_to_send)'''
 '''
 def send_to(ModuleDataSingleV2, flag):
     try:
@@ -244,8 +201,9 @@ mac_address = get_mac_address()'''
 if __name__ == '__main__':
 	#register_module() # Регистрация модуля на сервере
 	#update_gps_coordinates()
-	child = threading.Thread(target=add_data)  # Запуск агрегатора данных и отправки на мастер-сервер.
-	child.daemon = True
-	child.start()
-
-	app.run(host=local_host, port=local_port)  # Запуск сервера
+	#child = threading.Thread(target=add_data)  # Запуск агрегатора данных и отправки на мастер-сервер.
+	#child.daemon = True
+	#child.start()
+    model = torch.load('D:/InferencePCServer/NN/model.pt', map_location= 'cuda' if torch.cuda.is_available() else 'cpu')
+    model.eval()
+    app.run(host=local_host, port=local_port)  # Запуск сервера
