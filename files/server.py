@@ -134,7 +134,8 @@ def receive_data():
     print('Перед Вайл')
     data = requests.json
     freq = data['freq']
-    outputs = model(sig2pic(data['data']))
+    img = np.asarray(sig2pic(data['data']), dtype=np.float32)
+    outputs = model(img.to(device))
     print('TOKEN' + str(data['token']))
     print('OUTPUTS:')
     print(outputs)
@@ -204,6 +205,18 @@ if __name__ == '__main__':
 	#child = threading.Thread(target=add_data)  # Запуск агрегатора данных и отправки на мастер-сервер.
 	#child.daemon = True
 	#child.start()
-    model = torch.load('D:/InferencePCServer/NN/model.pt', map_location= 'cuda' if torch.cuda.is_available() else 'cpu')
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = torch.load('D:/InferencePCServer/NN/model.pt', map_location = device)
     model.eval()
+    #print(model)
+    '''with open('D:\InferencePCServer\A5_2.4_noise_0.npy', 'rb') as f:
+        data = np.frombuffer(f.read(), np.complex64)
+        img = torch.tensor([data.real, data.imag])
+        outputs = model(img.to(device))
+        print('OUTPUTS:')
+        print(outputs)
+        label = np.argmax(outputs, axis=2)[0][0]
+        print('LABEL: ' + str(label))
+        probability = softmax(outputs[0][0])[label]
+        print(classes[label], round(probability, 2))'''
     app.run(host=local_host, port=local_port)  # Запуск сервера
