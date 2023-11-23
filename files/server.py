@@ -35,15 +35,14 @@ data_queue = [None]*len(freqs)
 #scheduler = BackgroundScheduler(daemon=True)
 #scheduler.start()
 
-def sig2pic(data, figsize=(16, 8), dpi=80):
+def sig2pic(data_real, data_imag, figsize=(16, 8), dpi=80):
     try:
         #with open(path_to_data + filename, 'rb') as file:
             #tmp = np.frombuffer(file.read(), dtype=np.complex64)
-        signal = data
         fig1 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
-        sigr = signal.real
-        sigi = signal.imag
+        sigr = data_real
+        sigi = data_imag
         plt.plot(sigr, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -59,8 +58,8 @@ def sig2pic(data, figsize=(16, 8), dpi=80):
 
         fig2 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
-        sigr = signal.real
-        sigi = signal.imag
+        sigr = data_real
+        sigi = data_imag
         plt.plot(sigi, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -133,7 +132,7 @@ def receive_data():
     print('Перед Вайл')
     data = json.loads(requests.json)
     freq = int(data['freq'])
-    img = np.asarray(sig2pic(np.asarray(data['data'])), dtype=np.float32)
+    img = np.asarray(sig2pic(np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)), dtype=np.float32)
     outputs = model(img.to(device))
     print('TOKEN' + str(int(data['token'])))
     print('OUTPUTS:')

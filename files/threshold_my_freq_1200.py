@@ -15,6 +15,7 @@ load_dotenv(dotenv_path)
 localhost = os.getenv('lochost')
 localport = os.getenv('locport')
 PARAMS = {'split_size': 1_000_000}
+token = 1
 
 ##############################
 # HYPERPARAMETERS
@@ -59,7 +60,8 @@ def send_data(sig):
     global token
     data_to_send = {
                     "freq": 2400,
-                    "data": np.array(sig, dtype=np.complex64),
+                    "data_real": np.asarray(np.array(sig, dtype=np.complex64).real, dtype=np.float32),
+                    "data_imag": np.asarray(np.array(sig, dtype=np.complex64).imag, dtype=np.float32),
                     "token": token
     }
     mod_data_to_send = json.dumps(data_to_send, cls=NumpyArrayEncoder)
