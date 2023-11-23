@@ -1,8 +1,10 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
+from importlib import import_module
+
+import mlconfig
 from flask import Flask, request, jsonify
 from datetime import datetime, timedelta
-import requests
 import torch
 import subprocess
 import threading
@@ -12,26 +14,28 @@ from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 import numpy as np
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import io
 import cv2
 import json
 from json import JSONEncoder
-
+plt.switch_backend('agg')
 app = Flask(__name__)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env-template')
 load_dotenv(dotenv_path)
 path_to_NN = os.getenv('path_to_my_nn')
+example = os.getenv('example')
 local_host = os.getenv('local_host')
 local_port = os.getenv('local_port')
 classes = {0: 'drone', 1: 'noise', 2: 'wifi'}
 #server_ip = os.getenv('to_server_ip')
 #server_port = os.getenv('to_server_port')
 
-url_local_server = "http://{0}:{1}/receive_data".format(local_host, local_port)
+#url_local_server = "http://{0}:{1}/receive_data".format(local_host, local_port)
 pre_data = []
 freqs = [2400]
 data_queue = [None]*len(freqs)
+token = 1
 #scheduler = BackgroundScheduler(daemon=True)
 #scheduler.start()
 
@@ -129,22 +133,34 @@ def softmax(x):
 
 @app.route('/receive_data', methods = ['POST'])
 def receive_data():
-    print('Перед Вайл')
-    data = json.loads(requests.json)
+    global model
+    global token
+    data = json.loads(request.json)
+    print('Получен пакет ' + str(token))
+    token += 1
     freq = int(data['freq'])
     img = np.asarray(sig2pic(np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)), dtype=np.float32)
-    outputs = model(img.to(device))
-    print('TOKEN' + str(int(data['token'])))
-    print('OUTPUTS:')
-    print(outputs)
-    label = np.argmax(outputs, axis=2)[0][0]
+    img = torch.tensor(img)
+    img = torch.unsqueeze(img, 0)
+    img = img.to(device)
+    with torch.no_grad():
+        output = model(img)
+        _, pred = torch.max(output.data, 1)
+    prediction = np.asarray((pred.cpu()))[0]
+    print('PREDICTION ' + str(classes[int(prediction)]))
+    return str(classes[int(prediction)])
+
+
+    '''print('OUTPUTS:')
+    print(output)
+    label = np.argmax(output, axis=2)[0][0]
     print('LABEL: ' + str(label))
-    probability = softmax(outputs[0][0])[label]
+    probability = softmax(output[0][0])[label]
     print(classes[label], round(probability, 2), int(freq))
     result = {'message': 'Data inference successfully'}
     return jsonify(result)
 
-'''
+
 def send_to(ModuleDataSingleV2, flag):
     try:
         if flag == 0:
@@ -197,24 +213,25 @@ def process_data():
 
 mac_address = get_mac_address()'''
 
+
+def load_function(attr):
+    module_, func = attr.rsplit('.', maxsplit=1)
+    return getattr(import_module(module_), func)
+
+
 if __name__ == '__main__':
-	#register_module() # Регистрация модуля на сервере
-	#update_gps_coordinates()
-	#child = threading.Thread(target=add_data)  # Запуск агрегатора данных и отправки на мастер-сервер.
-	#child.daemon = True
-	#child.start()
+    config = mlconfig.load('config_resnet18.yaml')
+    model = load_function(config.model.architecture)(pretrained=False)
+    lin = model.conv1
+    new_lin = torch.nn.Sequential(
+        torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False),
+        lin
+    )
+    model.conv1 = new_lin
+    model.fc = torch.nn.Linear(in_features=512, out_features=3, bias=True)
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = torch.load('D:/InferencePCServer/NN/model.pt', map_location = device)
+    if device != 'cpu':
+        model = model.to(device)
+    model.load_state_dict(torch.load("tree.pth",  map_location=device))
     model.eval()
-    #print(model)
-    '''with open('D:\InferencePCServer\A5_2.4_noise_0.npy', 'rb') as f:
-        data = np.frombuffer(f.read(), np.complex64)
-        img = torch.tensor([data.real, data.imag])
-        outputs = model(img.to(device))
-        print('OUTPUTS:')
-        print(outputs)
-        label = np.argmax(outputs, axis=2)[0][0]
-        print('LABEL: ' + str(label))
-        probability = softmax(outputs[0][0])[label]
-        print(classes[label], round(probability, 2))'''
-    app.run(host=local_host, port=local_port)  # Запуск сервера
+    app.run(host='192.168.1.90', port='8080')
