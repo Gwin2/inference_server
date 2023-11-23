@@ -14,7 +14,7 @@ dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 server_host = os.getenv('server_ip')
 server_port = os.getenv('server_port')
-PARAMS = {'split_size': 100_000}
+PARAMS = {'split_size': 1_000_000}
 token = 1
 
     ##############################
