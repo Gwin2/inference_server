@@ -1,0 +1,23 @@
+# Training params
+epoch : 5
+batch_size : 16
+
+# Classifier
+model :
+  architecture : torchvision.models.quantization.resnet18
+  pretrained : True
+
+# Optimizer
+optimizer :
+  name : torch.optim.Adam
+  lr : 0.001
+
+# Criterion
+loss_function :
+  name : torch.nn.CrossEntropyLoss
+
+# Scheduler
+scheduler :
+  name : torch.optim.lr_scheduler.StepLR
+  gamma : 0.1
+  step_size : 7

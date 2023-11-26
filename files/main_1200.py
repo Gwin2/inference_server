@@ -31,7 +31,6 @@ load_dotenv(dotenv_path)
 
 def light_diods_on_boot():
 
-    #pins = [3, 4, 6, 9, 10, 7, 5, 2, 1, 0]
     pins = [11, 4, 3, 14, 12, 0, 1, 2, 5, 7]
     wpi.wiringPiSetup()
 
@@ -45,26 +44,12 @@ def light_diods_on_boot():
 
 
 def get_hack_id():
-    serial_number = os.getenv('hack2')
+    serial_number = os.getenv('hack')
     pos = None
     output = []
     try:
-       #command = '/home/orangepi/hackrf/host/build/hackrf-tools/src/hackrf_info'
         command = 'lsusb -v -d 1d50:6089 | grep iSerial'
         output.append(subprocess.check_output(command, shell=True, text=True))
-
-       # indexes = [line.split(":")[1].strip() for line in output_lines if "Index" in line]
-       # serial_numbers = [line.split(":")[1].strip() for line in output_lines if "Serial number" in line]
-       # print(indexes)
-       # print(serial_numbers)
-       # for i, number in enumerate(serial_numbers):
-       #     if number == serial_number:
-       #         pos = i
-       #         break
-       # if pos is not None:
-       #     id = indexes[pos]
-       # else:
-       #     print('Такого хака нет!')
     except subprocess.CalledProcessError as e:
         print(f"Команда завершилась с кодом возврата {e.returncode}")
         print(e)
@@ -195,8 +180,6 @@ class get_center_freq(gr.top_block):
 
 
 def main(top_block_cls=get_center_freq, options=None):
-    #for k in range(0, 3):
-    #    light_diods_on_boot()
     time.sleep(3)
     tb = top_block_cls()
     def sig_handler(sig=None, frame=None):
@@ -212,7 +195,6 @@ def main(top_block_cls=get_center_freq, options=None):
         input('Press Enter to quit: ')
     except EOFError:
         pass
-    #tb.stop()
     tb.wait()
 
 

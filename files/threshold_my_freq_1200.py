@@ -1,6 +1,5 @@
 # this module will be imported in the into your flowgraph
 
-# from gnuradio import gr
 import time
 import numpy as np
 import os
@@ -17,21 +16,18 @@ server_port = os.getenv('server_port')
 PARAMS = {'split_size': 1_000_000}
 token = 1
 
-    ##############################
-    # HYPERPARAMETERS
-    ##############################
+##############################
+# HYPERPARAMETERS
+##############################
 
 f_base = 2.48e9
 f_step = -10e6
 f_roof = 2.4e9
 
-    # p2p_border = np.array([0.05, 0.065, 0.08, 0.95, 0.115, 0.125, 0.135, 0.185, 0.25, 0.3])
+##############################
+# Variables
+##############################
 
-    ##############################
-    # Variables
-    ##############################
-
-# median_vals = []
 f = f_base  # local frequency
 EOCF = 0  # End of changing frequency flag
 signal_arr = []
@@ -85,16 +81,10 @@ def work(lvl):
     if f <= f_roof:
         f = f_base
         signal_arr = []
-        # send_data(np.max(np.array(median_vals)))
-        # median_vals = []
         return f, EOCF
     else:
         if len(signal_arr) >= PARAMS['split_size']:
             send_data(signal_arr[:PARAMS['split_size']])
-            # m = calc_median(sig)
-            # median_vals.append(m)
-            # print(m)
             signal_arr = []
             f += f_step
-            # time.sleep(10)
         return f, EOCF
