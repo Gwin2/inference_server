@@ -1,21 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-#
-# SPDX-License-Identifier: GPL-3.0
-#
-# GNU Radio Python Flow Graph
-# Title: get_center_freq
-# GNU Radio version: 3.8.1.0
 from gnuradio import blocks
 from gnuradio import gr
-from gnuradio.filter import firdes
 import sys
 import signal
-from argparse import ArgumentParser
-from gnuradio.eng_arg import eng_float, intx
-from gnuradio import eng_notation
-import threshold_my_freq_1200 as my_freq  # embedded python module
+import threshold_my_freq_1200 as my_freq
 import osmosdr
 import time
 import threading
@@ -30,7 +17,6 @@ dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 
 def light_diods_on_boot():
-
     pins = [11, 4, 3, 14, 12, 0, 1, 2, 5, 7]
     wpi.wiringPiSetup()
 
@@ -176,7 +162,6 @@ class get_center_freq(gr.top_block):
     def set_center_freq(self, center_freq):
         self.center_freq = center_freq
         self.rtlsdr_source_0.set_center_freq(self.center_freq, 0)
-
 
 
 def main(top_block_cls=get_center_freq, options=None):

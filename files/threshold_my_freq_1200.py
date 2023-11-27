@@ -1,9 +1,7 @@
-# this module will be imported in the into your flowgraph
-
 import time
+
 import numpy as np
 import os
-import psutil
 import sys
 import requests
 import json
@@ -11,30 +9,35 @@ from dotenv import load_dotenv
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
-server_host = os.getenv('server_ip')
+server_ip = os.getenv('server_ip')
 server_port = os.getenv('server_port')
+num_token = os.getenv('num_token')
 PARAMS = {'split_size': 1_000_000}
 token = 1
 
 ##############################
 # HYPERPARAMETERS
 ##############################
-
 f_base = 2.48e9
 f_step = -10e6
 f_roof = 2.4e9
-
 ##############################
 # Variables
 ##############################
-
-f = f_base  # local frequency
-EOCF = 0  # End of changing frequency flag
+f = f_base
+EOCF = 0
 signal_arr = []
+##############################
+# support functions
+##############################
 
-    ##############################
-    # support functions
-    ##############################
+'''
+def calc_median(sig):
+    m = np.abs(sig)
+    m = np.median(m)
+    return m
+'''
+
 
 class NumpyArrayEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -45,6 +48,7 @@ class NumpyArrayEncoder(json.JSONEncoder):
         else:
             return super(NumpyArrayEncoder, self).default(obj)
 
+
 def send_data(sig):
     global token
     data_to_send = {
@@ -54,7 +58,7 @@ def send_data(sig):
         "token": token
     }
     mod_data_to_send = json.dumps(data_to_send, cls=NumpyArrayEncoder)
-    response = requests.post("http://{0}:{1}/receive_data".format('192.168.1.90', '8080'), json=mod_data_to_send)
+    response = requests.post("http://{0}:{1}/receive_data".format(server_ip, server_port), json=mod_data_to_send)
     if response.status_code == 200:
         print('#' * 10)
         print('TOKEN ' + str(token))
@@ -65,9 +69,11 @@ def send_data(sig):
         print('#' * 10)
         print("Ошибка при отправке данных: ", response.status_code)
         print('#' * 10)
+    if num_token == token-1:
+        sys.exit()
+
 
 def work(lvl):
-
     global f_base
     global f_step
     global f_roof
@@ -87,4 +93,5 @@ def work(lvl):
             send_data(signal_arr[:PARAMS['split_size']])
             signal_arr = []
             f += f_step
+            time.sleep(30)
         return f, EOCF

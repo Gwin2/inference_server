@@ -1,6 +1,4 @@
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-
+import time
 from importlib import import_module
 import mlconfig
 from flask import Flask, request, jsonify
@@ -9,25 +7,25 @@ import os
 import sys
 from dotenv import load_dotenv
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 import io
 import cv2
 import json
-
 
 plt.switch_backend('agg')
 app = Flask(__name__)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 file_name_result = os.getenv('file_name_result')
+num_token = os.getenv('num_token')
+src_result = os.getenv('src_result')
 
 
 classes = {0: 'drone', 1: 'noise', 2: 'wifi'}
 token = 1
-num_token = 200
 result = ''
 result_dict = {0: 0, 1: 0, 2: 0}
-total_time = 0.0
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -87,10 +85,20 @@ def receive_data():
     data = json.loads(request.json)
     print()
     print('Получен пакет ' + str(token))
-    token += 1
 
     freq = int(data['freq'])
     img = np.asarray(sig2pic(np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)), dtype=np.float32)
+    np.save(str(src_result)+'result_'+str(token)+'.npy', img)
+    fig, ax = plt.subplots()
+    ax.imshow(img[0], cmap='gray')
+    plt.savefig(src_result+'token'+str(token)+'_real.png')
+    time.sleep(10)
+    fig, ax = plt.subplots()
+    ax.imshow(img[1], cmap='gray')
+    plt.savefig(src_result+'token'+str(token)+'_imag.png')
+    plt.close()
+    time.sleep(10)
+    token += 1
     img = torch.unsqueeze(torch.tensor(img), 0).to(device)
     with torch.no_grad():
         output = model(img)
@@ -103,7 +111,7 @@ def receive_data():
     output = np.asarray(torch.squeeze(output, 0))
     probability = softmax(output)[label]
     print('Уверенность модели в предсказании: ' + str(round(probability, 3)))
-    print('Тестовый инференс завершён')
+    print('Инференс завершён')
     print()
 
     if token == num_token:
@@ -114,7 +122,7 @@ def receive_data():
         print('Файл с результатами записан!')
         sys.exit()
 
-    result_msg = {'message': 'Data inference successfully'}
+    result_msg = {'message': 'Data inference successfully', 'prediction': classes[int(prediction)]}
     return jsonify(result_msg)
 
 
@@ -168,5 +176,4 @@ if __name__ == '__main__':
 
     server_ip = os.getenv('server_ip')
     server_port = os.getenv('server_port')
-    print(server_ip, server_port)
     app.run(host=server_ip, port=server_port)
