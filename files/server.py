@@ -18,7 +18,7 @@ app = Flask(__name__)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
 file_name_result = os.getenv('file_name_result')
-num_token = os.getenv('num_token')
+num_token = int(os.getenv('num_token'))
 src_result = os.getenv('src_result')
 
 
@@ -88,20 +88,9 @@ def receive_data():
 
     freq = int(data['freq'])
     img = np.asarray(sig2pic(np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)), dtype=np.float32)
-    np.save(str(src_result)+'result_'+str(token)+'.npy', img)
-    fig, ax = plt.subplots()
-    ax.imshow(img[0], cmap='gray')
-    plt.savefig(src_result+'token'+str(token)+'_real.png')
-    time.sleep(10)
-    fig, ax = plt.subplots()
-    ax.imshow(img[1], cmap='gray')
-    plt.savefig(src_result+'token'+str(token)+'_imag.png')
-    plt.close()
-    time.sleep(10)
-    token += 1
-    img = torch.unsqueeze(torch.tensor(img), 0).to(device)
+    img_torch = torch.unsqueeze(torch.tensor(img), 0).to(device)
     with torch.no_grad():
-        output = model(img)
+        output = model(img_torch)
         _, predict = torch.max(output.data, 1)
     prediction = np.asarray(predict.cpu())[0]
     result += str(int(prediction)) + ' '
@@ -111,10 +100,21 @@ def receive_data():
     output = np.asarray(torch.squeeze(output, 0))
     probability = softmax(output)[label]
     print('Уверенность модели в предсказании: ' + str(round(probability, 3)))
+    print('Загрузка картинок ...')
+    np.save(str(src_result) + 'result_' + str(token) + '_' + str(classes[int(prediction)]) + '.npy', img)
+    fig, ax = plt.subplots()
+    ax.imshow(img[0], cmap='gray')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction)]) + '_real.png')
+    fig, ax = plt.subplots()
+    ax.imshow(img[1], cmap='gray')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction)]) + '_imag.png')
+    plt.close()
+    token += 1
+    print('Загрузка картинок завершена')
     print('Инференс завершён')
     print()
 
-    if token == num_token:
+    if token-1 == num_token:
         print('Завершение работы')
         print(result_dict)
         with open(file_name_result, 'w') as f:
