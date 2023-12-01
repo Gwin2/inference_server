@@ -69,7 +69,7 @@ def send_data(sig):
         print('#' * 10)
         print("Ошибка при отправке данных: ", response.status_code)
         print('#' * 10)
-    if num_token == token-1:
+    if int(num_token) == token-1:
         sys.exit()
 
 

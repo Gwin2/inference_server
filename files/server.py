@@ -17,15 +17,15 @@ plt.switch_backend('agg')
 app = Flask(__name__)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
-file_name_result = os.getenv('file_name_result')
+# file_name_result = os.getenv('file_name_result')
 num_token = int(os.getenv('num_token'))
 src_result = os.getenv('src_result')
 
 
 classes = {0: 'drone', 1: 'noise', 2: 'wifi'}
 token = 1
-result = ''
-result_dict = {0: 0, 1: 0, 2: 0}
+# result = ''
+# result_dict = {0: 0, 1: 0, 2: 0}
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -77,10 +77,11 @@ def softmax(x):
 
 @app.route('/receive_data', methods=['POST'])
 def receive_data():
-    global model
+    global model_1
+    global model_2
     global token
-    global result
-    global result_dict
+    #global result
+    #global result_dict
 
     data = json.loads(request.json)
     print()
@@ -90,24 +91,44 @@ def receive_data():
     img = np.asarray(sig2pic(np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)), dtype=np.float32)
     img_torch = torch.unsqueeze(torch.tensor(img), 0).to(device)
     with torch.no_grad():
-        output = model(img_torch)
-        _, predict = torch.max(output.data, 1)
-    prediction = np.asarray(predict.cpu())[0]
-    result += str(int(prediction)) + ' '
-    result_dict[int(prediction)] += 1
-    print('PREDICTION ' + str(classes[int(prediction)]))
-    label = np.asarray(np.argmax(output, axis=1))[0]
-    output = np.asarray(torch.squeeze(output, 0))
-    probability = softmax(output)[label]
-    print('Уверенность модели в предсказании: ' + str(round(probability, 3)))
+        output_1 = model_1(img_torch)
+        output_2 = model_2(img_torch)
+        _, predict_1 = torch.max(output_1.data, 1)
+        _, predict_2 = torch.max(output_2.data, 1)
+    prediction_1 = np.asarray(predict_1.cpu())[0]
+    # result += str(int(prediction)) + ' '
+    # result_dict[int(prediction)] += 1
+    print('PREDICTION 1 ' + str(classes[int(prediction_1)]))
+    label = np.asarray(np.argmax(output_1, axis=1))[0]
+    output_1 = np.asarray(torch.squeeze(output_1, 0))
+    probability = softmax(output_1)[label]
+    print('Уверенность модели 1 в предсказании: ' + str(round(probability, 3)))
     print('Загрузка картинок ...')
-    np.save(str(src_result) + 'result_' + str(token) + '_' + str(classes[int(prediction)]) + '.npy', img)
+    np.save(str(src_result) + 'result_' + str(token) + '_' + str(classes[int(prediction_1)]) + '.npy', img)
     fig, ax = plt.subplots()
     ax.imshow(img[0], cmap='gray')
-    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction)]) + '_real.png')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction_1)]) + '_real_1.png')
     fig, ax = plt.subplots()
     ax.imshow(img[1], cmap='gray')
-    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction)]) + '_imag.png')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction_1)]) + '_imag_1.png')
+    plt.close()
+    print('Загрузка картинок завершена')
+
+    prediction_2 = np.asarray(predict_2.cpu())[0]
+    # result += str(int(prediction)) + ' '
+    # result_dict[int(prediction)] += 1
+    print('PREDICTION 2 ' + str(classes[int(prediction_2)]))
+    label = np.asarray(np.argmax(output_2, axis=1))[0]
+    output_2 = np.asarray(torch.squeeze(output_2, 0))
+    probability = softmax(output_2)[label]
+    print('Уверенность модели 2 в предсказании: ' + str(round(probability, 3)))
+    print('Загрузка картинок ...')
+    fig, ax = plt.subplots()
+    ax.imshow(img[0], cmap='gray')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction_2)]) + '_real_2.png')
+    fig, ax = plt.subplots()
+    ax.imshow(img[1], cmap='gray')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction_2)]) + '_imag_2.png')
     plt.close()
     token += 1
     print('Загрузка картинок завершена')
@@ -116,13 +137,13 @@ def receive_data():
 
     if token-1 == num_token:
         print('Завершение работы')
-        print(result_dict)
-        with open(file_name_result, 'w') as f:
-            f.write(result)
-        print('Файл с результатами записан!')
+        # print(result_dict)
+        # with open(file_name_result, 'w') as f:
+            # f.write(result)
+        # print('Файл с результатами записан!')
         sys.exit()
 
-    result_msg = {'message': 'Data inference successfully', 'prediction': classes[int(prediction)]}
+    result_msg = {'message': 'Data inference successfully', 'prediction_1': classes[int(prediction_1)], 'prediction_2': classes[int(prediction_2)]}
     return jsonify(result_msg)
 
 
@@ -132,23 +153,37 @@ def load_function(attr):
 
 
 def build_model():
-    path_to_nn = os.getenv('path_to_nn')
+    path_to_nn_1 = os.getenv('path_to_nn_1')
+    path_to_nn_2 = os.getenv('path_to_nn_2')
     src_ml_config = os.getenv('src_ml_config')
 
     config = mlconfig.load(src_ml_config)
-    model = load_function(config.model.architecture)(pretrained=False)
-    lin = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False), model.conv1)
-    model.conv1 = lin
-    model.fc = torch.nn.Linear(in_features=512, out_features=3, bias=True)
+    model_1 = load_function(config.model.architecture)(pretrained=False)
+    lin = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False), model_1.conv1)
+    model_1.conv1 = lin
+    model_1.fc = torch.nn.Linear(in_features=512, out_features=3, bias=True)
 
     if device != 'cpu':
-        model = model.to(device)
-    model.load_state_dict(torch.load(path_to_nn, map_location=device))
-    model.eval()
+        model_1 = model_1.to(device)
+    model_1.load_state_dict(torch.load(path_to_nn_1, map_location=device))
+    model_1.eval()
 
-    print('Модель загружена')
     print()
-    return model
+    print('Модель 1 загружена')
+
+    model_2 = load_function(config.model.architecture)(pretrained=False)
+    lin = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False), model_2.conv1)
+    model_2.conv1 = lin
+    model_2.fc = torch.nn.Linear(in_features=512, out_features=3, bias=True)
+
+    if device != 'cpu':
+        model_2 = model_2.to(device)
+    model_2.load_state_dict(torch.load(path_to_nn_2, map_location=device))
+    model_2.eval()
+
+    print('Модель 2 загружена')
+    print()
+    return model_1, model_2
 
 
 def run_example():
@@ -157,21 +192,29 @@ def run_example():
 
     img = torch.unsqueeze(torch.tensor(np.asarray(np.load(src_example, 'r+'), dtype=np.float32)), 0).to(device)
     with torch.no_grad():
-        output = model(img)
-        _, predict = torch.max(output.data, 1)
-    prediction = np.asarray(predict.cpu())[0]
-    print('Пробное предсказание: ' + str(classes[int(prediction)]))
-    label = np.asarray(np.argmax(output, axis=1))[0]
-    output = np.asarray(torch.squeeze(output, 0))
-    probability = softmax(output)[label]
-    print('Уверенность модели в пробном предсказании: ' + str(round(probability, 3)))
+        output_1 = model_1(img)
+        output_2 = model_2(img)
+        _, predict_1 = torch.max(output_1.data, 1)
+        _, predict_2 = torch.max(output_2.data, 1)
+    prediction = np.asarray(predict_1.cpu())[0]
+    print('Пробное предсказание 1: ' + str(classes[int(prediction)]))
+    label = np.asarray(np.argmax(output_1, axis=1))[0]
+    output_1 = np.asarray(torch.squeeze(output_1, 0))
+    probability = softmax(output_1)[label]
+    print('Уверенность модели 1 в пробном предсказании: ' + str(round(probability, 3)))
+    prediction = np.asarray(predict_2.cpu())[0]
+    print('Пробное предсказание 2: ' + str(classes[int(prediction)]))
+    label = np.asarray(np.argmax(output_2, axis=1))[0]
+    output_2 = np.asarray(torch.squeeze(output_2, 0))
+    probability = softmax(output_2)[label]
+    print('Уверенность модели 2 в пробном предсказании: ' + str(round(probability, 3)))
     print('Тестовый инференс завершён')
     print()
 
 
 if __name__ == '__main__':
 
-    model = build_model()
+    model_1, model_2 = build_model()
     run_example()
 
     server_ip = os.getenv('server_ip')
