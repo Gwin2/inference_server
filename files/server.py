@@ -93,8 +93,10 @@ def receive_data():
     with torch.no_grad():
         output_1 = model_1(img_torch)
         output_2 = model_2(img_torch)
+        output_3 = model_3(img_torch)
         _, predict_1 = torch.max(output_1.data, 1)
         _, predict_2 = torch.max(output_2.data, 1)
+        _, predict_3 = torch.max(output_3.data, 1)
     prediction_1 = np.asarray(predict_1.cpu())[0]
     # result += str(int(prediction)) + ' '
     # result_dict[int(prediction)] += 1
@@ -130,8 +132,27 @@ def receive_data():
     ax.imshow(img[1], cmap='gray')
     plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction_2)]) + '_imag_2.png')
     plt.close()
-    token += 1
     print('Загрузка картинок завершена')
+
+    prediction_3 = np.asarray(predict_3.cpu())[0]
+    # result += str(int(prediction)) + ' '
+    # result_dict[int(prediction)] += 1
+    print('PREDICTION 3 ' + str(classes[int(prediction_3)]))
+    label = np.asarray(np.argmax(output_3, axis=1))[0]
+    output_3 = np.asarray(torch.squeeze(output_3, 0))
+    probability = softmax(output_3)[label]
+    print('Уверенность модели 3 в предсказании: ' + str(round(probability, 3)))
+    print('Загрузка картинок ...')
+    fig, ax = plt.subplots()
+    ax.imshow(img[0], cmap='gray')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction_3)]) + '_real_3.png')
+    fig, ax = plt.subplots()
+    ax.imshow(img[1], cmap='gray')
+    plt.savefig(src_result + 'token_' + str(token) + '_' + str(classes[int(prediction_3)]) + '_imag_3.png')
+    plt.close()
+    print('Загрузка картинок завершена')
+
+    token += 1
     print('Инференс завершён')
     print()
 
@@ -143,7 +164,7 @@ def receive_data():
         # print('Файл с результатами записан!')
         sys.exit()
 
-    result_msg = {'message': 'Data inference successfully', 'prediction_1': classes[int(prediction_1)], 'prediction_2': classes[int(prediction_2)]}
+    result_msg = {'message': 'Data inference successfully', 'prediction_1': classes[int(prediction_1)], 'prediction_2': classes[int(prediction_2)], 'prediction_3': classes[int(prediction_3)]}
     return jsonify(result_msg)
 
 
@@ -155,10 +176,12 @@ def load_function(attr):
 def build_model():
     path_to_nn_1 = os.getenv('path_to_nn_1')
     path_to_nn_2 = os.getenv('path_to_nn_2')
-    src_ml_config = os.getenv('src_ml_config')
+    path_to_nn_3 = os.getenv('path_to_nn_3')
+    src_ml_config_18 = os.getenv('src_ml_config_18')
+    src_ml_config_50 = os.getenv('src_ml_config_50')
 
-    config = mlconfig.load(src_ml_config)
-    model_1 = load_function(config.model.architecture)(pretrained=False)
+    config_18 = mlconfig.load(src_ml_config_18)
+    model_1 = load_function(config_18.model.architecture)(pretrained=False)
     lin = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False), model_1.conv1)
     model_1.conv1 = lin
     model_1.fc = torch.nn.Linear(in_features=512, out_features=3, bias=True)
@@ -171,7 +194,7 @@ def build_model():
     print()
     print('Модель 1 загружена')
 
-    model_2 = load_function(config.model.architecture)(pretrained=False)
+    model_2 = load_function(config_18.model.architecture)(pretrained=False)
     lin = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False), model_2.conv1)
     model_2.conv1 = lin
     model_2.fc = torch.nn.Linear(in_features=512, out_features=3, bias=True)
@@ -182,8 +205,26 @@ def build_model():
     model_2.eval()
 
     print('Модель 2 загружена')
+
+    config_50 = mlconfig.load(src_ml_config_50)
+    model_3 = load_function(config_50.model.architecture)(pretrained=False)
+    lin = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False), model_3.conv1)
+    model_3.conv1 = lin
+    model_3.fc = torch.nn.Sequential(
+        torch.nn.Linear(in_features=2048, out_features=512, bias=True),
+        torch.nn.Linear(in_features=512, out_features=128, bias=True),
+        torch.nn.Linear(in_features=128, out_features=3, bias=True)
+    )
+
+    if device != 'cpu':
+        model_3 = model_3.to(device)
+    model_3.load_state_dict(torch.load(path_to_nn_3, map_location=device))
+    model_3.eval()
+
+    print('Модель 3 загружена')
     print()
-    return model_1, model_2
+
+    return model_1, model_2, model_3
 
 
 def run_example():
@@ -194,8 +235,10 @@ def run_example():
     with torch.no_grad():
         output_1 = model_1(img)
         output_2 = model_2(img)
+        output_3 = model_3(img)
         _, predict_1 = torch.max(output_1.data, 1)
         _, predict_2 = torch.max(output_2.data, 1)
+        _, predict_3 = torch.max(output_3.data, 1)
     prediction = np.asarray(predict_1.cpu())[0]
     print('Пробное предсказание 1: ' + str(classes[int(prediction)]))
     label = np.asarray(np.argmax(output_1, axis=1))[0]
@@ -208,13 +251,19 @@ def run_example():
     output_2 = np.asarray(torch.squeeze(output_2, 0))
     probability = softmax(output_2)[label]
     print('Уверенность модели 2 в пробном предсказании: ' + str(round(probability, 3)))
+    prediction = np.asarray(predict_3.cpu())[0]
+    print('Пробное предсказание 3: ' + str(classes[int(prediction)]))
+    label = np.asarray(np.argmax(output_3, axis=1))[0]
+    output_3 = np.asarray(torch.squeeze(output_3, 0))
+    probability = softmax(output_3)[label]
+    print('Уверенность модели 3 в пробном предсказании: ' + str(round(probability, 3)))
     print('Тестовый инференс завершён')
     print()
 
 
 if __name__ == '__main__':
 
-    model_1, model_2 = build_model()
+    model_1, model_2,model_3 = build_model()
     run_example()
 
     server_ip = os.getenv('server_ip')
