@@ -1,4 +1,3 @@
-import time
 from importlib import import_module
 import mlconfig
 from flask import Flask, request, jsonify
@@ -7,7 +6,6 @@ import os
 import sys
 from dotenv import load_dotenv
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
 import io
 import cv2
@@ -17,22 +15,25 @@ plt.switch_backend('agg')
 app = Flask(__name__)
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
-# file_name_result = os.getenv('file_name_result')
 num_token = int(os.getenv('NUM_TOKEN'))
 src_result = os.getenv('SRC_RESULT')
 
+path_to_nn_1 = os.getenv('PATH_TO_NN_1')
+path_to_nn_2 = os.getenv('PATH_TO_NN_2')
+path_to_nn_3 = os.getenv('PATH_TO_NN_3')
+src_ml_config_18 = os.getenv('SRC_ML_CONFIG_18')
+src_ml_config_50 = os.getenv('SRC_ML_CONFIG_50')
+
 classes = {0: 'drone', 1: 'noise', 2: 'wifi'}
 token = 1
-# result = ''
-# result_dict = {0: 0, 1: 0, 2: 0}
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-def sig2pic(data_real, data_imag, figsize=(16, 8), dpi=80):
+def pre_func_conv(data, figsize=(16, 8), dpi=80):
     try:
         fig1 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
-        sig_real = data_real
+        sig_real = data.real
         plt.plot(sig_real, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -48,7 +49,7 @@ def sig2pic(data_real, data_imag, figsize=(16, 8), dpi=80):
 
         fig2 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
-        sig_imag = data_imag
+        sig_imag = data.imag
         plt.plot(sig_imag, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
@@ -69,9 +70,19 @@ def sig2pic(data_real, data_imag, figsize=(16, 8), dpi=80):
         return None
 
 
-def softmax(x):
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum()
+def build_func_conv(file_model, file_config):
+    config = mlconfig.load(file_config)
+    model = load_function(config.model.architecture)(pretrained=False)
+    lin = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2), padding=(3, 3), bias=False), model.conv1)
+    model.conv1 = lin
+    model.fc = torch.nn.Linear(in_features=512, out_features=3, bias=True)
+
+    if device != 'cpu':
+        model = model.to(device)
+    model.load_state_dict(torch.load(file_model, map_location=device))
+    model.eval()
+
+    return model
 
 
 @app.route('/receive_data', methods=['POST'])
@@ -85,7 +96,6 @@ def receive_data():
     data = json.loads(request.json)
     print()
     print('Получен пакет ' + str(token))
-
     freq = int(data['freq'])
     img = np.asarray(
         sig2pic(np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)),
@@ -152,7 +162,8 @@ def receive_data():
     plt.close()
     print('Загрузка картинок завершена')
 
-    np.save(str(src_result) + 'result_' + str(token) + '_' + str(classes[int(prediction_1)]) + '_' + str(classes[int(prediction_2)]) + '_' + str(classes[int(prediction_3)]) + '.npy', img)
+    np.save(str(src_result) + 'result_' + str(token) + '_' + str(classes[int(prediction_1)]) + '_' + str(
+        classes[int(prediction_2)]) + '_' + str(classes[int(prediction_3)]) + '.npy', img)
     token += 1
     print('Инференс завершён')
     print()
@@ -176,11 +187,6 @@ def load_function(attr):
 
 
 def build_model():
-    path_to_nn_1 = os.getenv('PATH_TO_NN_1')
-    path_to_nn_2 = os.getenv('PATH_TO_NN_2')
-    path_to_nn_3 = os.getenv('PATH_TO_NN_3')
-    src_ml_config_18 = os.getenv('SRC_ML_CONFIG_18')
-    src_ml_config_50 = os.getenv('SRC_ML_CONFIG_50')
     print(src_ml_config_50)
 
     config_18 = mlconfig.load(src_ml_config_18)
