@@ -1,5 +1,3 @@
-import time
-
 import numpy as np
 import os
 import sys
@@ -7,13 +5,13 @@ import requests
 import json
 from dotenv import load_dotenv
 
-dotenv_path = os.path.join(os.path.dirname(__file__), '../.env')
+dotenv_path = os.path.join(os.path.dirname(__file__), '/home/orangepi/InferencePCServer/files/orange_scripts/.env')
 load_dotenv(dotenv_path)
 server_ip = os.getenv('server_ip')
 server_port = os.getenv('server_port')
 num_token = os.getenv('num_token')
 PARAMS = {'split_size': 1_000_000}
-token = 1
+token = 0
 
 ##############################
 # HYPERPARAMETERS
@@ -27,16 +25,6 @@ f_roof = 2.4e9
 f = f_base
 EOCF = 0
 signal_arr = []
-##############################
-# support functions
-##############################
-
-'''
-def calc_median(sig):
-    m = np.abs(sig)
-    m = np.median(m)
-    return m
-'''
 
 
 class NumpyArrayEncoder(json.JSONEncoder):
@@ -53,23 +41,23 @@ def send_data(sig):
     global token
     data_to_send = {
         "freq": 2400,
+        "token": int(token+1),
         "data_real": np.asarray(np.array(sig, dtype=np.complex64).real, dtype=np.float32),
-        "data_imag": np.asarray(np.array(sig, dtype=np.complex64).imag, dtype=np.float32),
-        "token": token
+        "data_imag": np.asarray(np.array(sig, dtype=np.complex64).imag, dtype=np.float32)
     }
     mod_data_to_send = json.dumps(data_to_send, cls=NumpyArrayEncoder)
     response = requests.post("http://{0}:{1}/receive_data".format(server_ip, server_port), json=mod_data_to_send)
     if response.status_code == 200:
         print('#' * 10)
-        print('TOKEN ' + str(token))
         token += 1
+        print('TOKEN ' + str(token))
         print(response.text)
         print('#' * 10)
     else:
         print('#' * 10)
         print("Ошибка при отправке данных: ", response.status_code)
         print('#' * 10)
-    if int(num_token) == token-1:
+    if int(num_token) == token:
         sys.exit()
 
 

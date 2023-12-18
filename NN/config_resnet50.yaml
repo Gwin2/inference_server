@@ -1,16 +1,16 @@
 # Training params
-epoch : 3
-batch_size : 32
+epoch : 1
+batch_size : 16
 
 # Classifier
 model :
   architecture : torchvision.models.resnet50
-  pretrained : True
+  pretrained : False
 
 # Optimizer
 optimizer :
   name : torch.optim.Adam
-  lr : 0.001
+  lr : 0.01
 
 # Criterion
 loss_function :

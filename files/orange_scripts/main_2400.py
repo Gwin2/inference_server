@@ -44,7 +44,7 @@ def get_hack_id():
     print(output_lines)
     serial_numbers = [line.split()[-1] for line in output_lines]
     print(serial_numbers)
-    id = 0
+
     for i, number in enumerate(serial_numbers):
         if number == serial_number:
             id = i
