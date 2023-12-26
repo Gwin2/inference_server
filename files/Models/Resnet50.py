@@ -113,10 +113,10 @@ def post_func_resnet50(src='', model_type='', model_id=0, ind_inference=0, data=
     try:
         fig, ax = plt.subplots()
         ax.imshow(data[0], cmap='gray')
-        plt.savefig(src + 'inference' + str(mapping[int(prediction)]) + '_real_' + str(model_id) + '_' + str(model_type) + '.png')
+        plt.savefig(src + '_inference_' + str(ind_inference) + '_' + str(mapping[int(prediction)]) + '_real_' + str(model_id) + '_' + str(model_type) + '.png')
         fig, ax = plt.subplots()
         ax.imshow(data[1], cmap='gray')
-        plt.savefig(src + str(mapping[int(prediction)]) + '_imag_' + str(model_id) + '_' + str(model_type) + '.png')
+        plt.savefig(src + '_inference_' + str(ind_inference) + '_' + str(mapping[int(prediction)]) + '_imag_' + str(model_id) + '_' + str(model_type) + '.png')
         plt.close()
 
         print('Постобработка завершена')

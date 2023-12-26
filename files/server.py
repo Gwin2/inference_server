@@ -26,12 +26,15 @@ def init_model_list():
             if key.startswith('NN_'):
                 params = config[key].split(' && ')
                 module = importlib.import_module('files.Models.' + params[4])
+                classes = {}
+                for value in params[9][1:-1].split(','):
+                    classes[len(classes)] = value
                 model_list.append(Model(file_model=params[0], file_config=params[1], src_example=params[2],
                                         src_result=params[3], type_model=params[4],
                                         build_model_func=getattr(module, params[5]),
                                         pre_func=getattr(module, params[6]), inference_func=getattr(module, params[7]),
                                         post_func=getattr(module, params[8]),
-                                        classes=dict({0: "drone", 1: "noise", 2: "wifi"})))
+                                        classes=classes))
     except Exception as exc:
         print(str(exc))
 
