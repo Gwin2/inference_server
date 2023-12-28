@@ -15,7 +15,7 @@ token = 0
 model_list = []
 
 config = dict(dotenv_values(".env"))
-num_token = config['NUM_TOKEN']
+num_token = int(config['NUM_TOKEN'])
 
 
 def init_model_list():
