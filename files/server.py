@@ -70,6 +70,8 @@ def receive_data():
 
     if token == num_token:
         print('Завершение работы!')
+        print()
+        print(Model.get_inference_list())
         sys.exit()
 
     result_msg = {'message': 'Data inference successfully'}

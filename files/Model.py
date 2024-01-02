@@ -17,8 +17,8 @@ class Model(object):
         Model._inference_list[type_model].append(list([ind_inference, prediction, probability]))
 
     @staticmethod
-    def get_inference_list(type_model=''):
-        return Model._inference_list[type_model]
+    def get_inference_list():
+        return Model._inference_list
 
     def __init__(self, file_model='', file_config='', src_example='', src_result='', type_model='',
                  build_model_func=None, pre_func=None, inference_func=None, post_func=None, classes=None):
