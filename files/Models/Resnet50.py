@@ -91,32 +91,32 @@ def inference_func_resnet50(data=None, model=None, mapping=None, shablon=''):
         with torch.no_grad():
             output = model(img)
             _, predict = torch.max(output.data, 1)
-        prediction = np.asarray(predict.cpu())[0]
-        print('PREDICTION' + shablon + ': ' + mapping[int(prediction)])
+        prediction = mapping[int(np.asarray(predict.cpu())[0])]
+        print('PREDICTION' + shablon + ': ' + prediction)
 
         label = np.asarray(np.argmax(output, axis=1))[0]
         output = np.asarray(torch.squeeze(output, 0))
         expon = np.exp(output - np.max(output))
-        probability = (expon / expon.sum())[label]
-        print('Уверенность' + shablon + ' в предсказании: ' + str(round(probability, 3)))
+        probability = round((expon / expon.sum())[label], 3)
+        print('Уверенность' + shablon + ' в предсказании: ' + str(probability))
 
         print('Инференс завершен')
         print()
-        return prediction
+        return prediction, probability
 
     except Exception as exc:
         print(str(exc))
         return None
 
 
-def post_func_resnet50(src='', model_type='', model_id=0, ind_inference=0, data=None, prediction=None, mapping=None):
+def post_func_resnet50(src='', model_type='', prediction='', model_id=0, ind_inference=0, data=None):
     try:
         fig, ax = plt.subplots()
         ax.imshow(data[0], cmap='gray')
-        plt.savefig(src + '_inference_' + str(ind_inference) + '_' + str(mapping[int(prediction)]) + '_real_' + str(model_id) + '_' + str(model_type) + '.png')
+        plt.savefig(src + '_inference_' + str(ind_inference) + '_' + prediction + '_real_' + str(model_id) + '_' + model_type + '.png')
         fig, ax = plt.subplots()
         ax.imshow(data[1], cmap='gray')
-        plt.savefig(src + '_inference_' + str(ind_inference) + '_' + str(mapping[int(prediction)]) + '_imag_' + str(model_id) + '_' + str(model_type) + '.png')
+        plt.savefig(src + '_inference_' + str(ind_inference) + '_' + prediction + '_imag_' + str(model_id) + '_' + model_type + '.png')
         plt.close()
 
         print('Постобработка завершена')

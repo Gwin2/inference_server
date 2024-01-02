@@ -5,14 +5,24 @@ import re
 
 class Model(object):
     _model_id = 0
+    _inference_list = {}
 
     @staticmethod
     def get_model_id():
         Model._model_id += 1
         return Model._model_id
 
+    @staticmethod
+    def append_to_inference_list(type_model='', ind_inference=0, prediction='', probability=0.0):
+        Model._inference_list[type_model].append(list([ind_inference, prediction, probability]))
+
+    @staticmethod
+    def get_inference_list(type_model=''):
+        return Model._inference_list[type_model]
+
     def __init__(self, file_model='', file_config='', src_example='', src_result='', type_model='',
                  build_model_func=None, pre_func=None, inference_func=None, post_func=None, classes=None):
+        Model._inference_list[type_model] = []
         self._model_id = Model.get_model_id()
         self._file_model = file_model
         self._file_config = file_config
@@ -41,11 +51,11 @@ class Model(object):
         print('Подготовка данных' + self._shablon)
         self._data = self._pre_func(data)
 
-    def _post_data(self, prediction=None):
+    def _post_data(self, prediction=''):
         print('Постобработка данных' + self._shablon)
         self._ind_inference += 1
         self._post_func(src=self._src_result, data=self._data, model_id=self._model_id,
-                        ind_inference=self._ind_inference, prediction=prediction, mapping=self._classes)
+                        ind_inference=self._ind_inference, prediction=prediction)
 
     def test_inference(self):
         try:
@@ -84,6 +94,8 @@ class Model(object):
     def inference(self, data=None):
         self._prepare_data(data=data)
         print('Инференс' + self._shablon)
-        prediction = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
-                                          shablon=self._shablon)
+        prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
+                                                       shablon=self._shablon)
+        Model.append_to_inference_list(type_model=self._type_model, ind_inference=self._ind_inference,
+                                       prediction=prediction, probability=probability)
         self._post_data(prediction=prediction)
