@@ -54,7 +54,7 @@ class Model(object):
     def _post_data(self, prediction=''):
         print('Постобработка данных' + self._shablon)
         self._ind_inference += 1
-        self._post_func(src=self._src_result, data=self._data, model_id=self._model_id,
+        self._post_func(src=self._src_result, data=self._data, model_id=self._model_id, model_type=self._type_model,
                         ind_inference=self._ind_inference, prediction=prediction)
 
     def test_inference(self):

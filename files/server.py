@@ -74,7 +74,7 @@ def receive_data():
         print(Model.get_inference_list())
         sys.exit()
 
-    result_msg = {'message': 'Data inference successfully'}
+    result_msg = {'message': 'Data inference successfully!'}
     return jsonify(result_msg)
 
 
