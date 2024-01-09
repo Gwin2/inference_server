@@ -70,10 +70,10 @@ def receive_data():
     print('#' * 100)
 
     if token == num_token:
-        print(Model.get_result())
+        #print(Model.get_result())
         print('Завершение работы!')
         print()
-        print(Model.get_inference_list())
+        #print(Model.get_inference_list())
         sys.exit()
 
     result_msg = {'message': 'Data inference successfully!'}
