@@ -5,11 +5,20 @@ import re
 
 class Model(object):
     _model_id = 0
+    _result_list = dict()
 
     @staticmethod
     def get_model_id():
         Model._model_id += 1
         return Model._model_id
+
+    @staticmethod
+    def get_result_list():
+        return Model._result_list
+
+    @staticmethod
+    def append_in_result_list(type_model='', list_to_append=None):
+        Model._result_list[type_model].append(list_to_append)
 
     def __init__(self, file_model='', file_config='', src_example='', src_result='', type_model='',
                  build_model_func=None, pre_func=None, inference_func=None, post_func=None, classes=None):
@@ -28,6 +37,7 @@ class Model(object):
         self._data = None
         self._shablon = ' Модель ' + str(self._model_id) + ' с типом ' + str(self._type_model)
         self._model = self._build_model()
+        Model._result_list[type_model] = []
 
     def __str__(self):
         return self._shablon + ' работает!' + '\n'
@@ -84,6 +94,7 @@ class Model(object):
     def inference(self, data=None):
         self._prepare_data(data=data)
         print('Инференс' + self._shablon)
-        prediction = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
+        prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
                                           shablon=self._shablon)
+        Model.append_in_result_list(self._type_model, list([self._ind_inference, prediction, probability]))
         self._post_data(prediction=prediction)

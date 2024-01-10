@@ -112,7 +112,7 @@ class PytorchModel(sklearn.base.BaseEstimator):
         X = X.reshape(-1, *self.input_shape)
         x_tensor = torch.tensor(X.astype(np.float32))
         if y:
-            y_tensor = torch.tensor(y.astype(np.long))
+            y_tensor = torch.tensor(y.astype(np.float32))
         else:
             y_tensor = torch.zeros(len(X), dtype=torch.long)
         test_dataset = TensorDataset(x_tensor, y_tensor)
@@ -134,8 +134,8 @@ class PytorchModel(sklearn.base.BaseEstimator):
         predictions = np.concatenate(predictions)
         return predictions
 
-    def predict(self, X, y=None):
-        predictions = self.predict_proba(X, y)
+    def predict(self, x, y=None):
+        predictions = self.predict_proba(x, y)
         predictions = predictions.argmax(axis=1)
         return predictions
 
@@ -144,15 +144,3 @@ base_model = PytorchModel(net_type=SimpleCNN, net_params=dict(), optim_type=Adam
                           optim_params={"lr": 1e-3}, loss_fn=nn.CrossEntropyLoss(),
                           input_shape=(1, 8, 8), batch_size=32, accuracy_tol=0.02,
                           tol_epochs=10, cuda=True)
-
-base_model.fit(x_train_scaled, y_train)
-
-preds = base_model.predict(x_test_scaled)
-true_classified = (preds == y_test).sum()
-test_accuracy = true_classified / len(y_test)
-
-print(f"Test accuracy: {test_accuracy}")
-
-meta_classifier = BaggingClassifier(base_estimator=base_model, n_estimators=10) # заметьте, что в конструктор передаем именно объект базового классификатора
-
-meta_classifier.fit(x_train_scaled.reshape(-1, 64), y_train)

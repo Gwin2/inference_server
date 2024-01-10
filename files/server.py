@@ -50,34 +50,36 @@ def run_example():
 
 @app.route('/receive_data', methods=['POST'])
 def receive_data():
-    global token
+    try:
+        global token
 
-    print()
-    data = json.loads(request.json)
-    print('#' * 100)
-    print('Получен пакет ' + str(token+1))
-    freq = int(data['freq'])
-    print('Частота ' + str(freq))
-
-    for model in model_list:
-        print('-' * 100)
-        print(str(model))
-        model.inference([np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)])
-        print('-' * 100)
-
-    token += 1
-    print()
-    print('#' * 100)
-
-    if token == num_token:
-        #print(Model.get_result())
-        print('Завершение работы!')
         print()
-        #print(Model.get_inference_list())
-        sys.exit()
+        data = json.loads(request.json)
+        print('#' * 100)
+        print('Получен пакет ' + str(token+1))
+        freq = int(data['freq'])
+        print('Частота ' + str(freq))
 
-    result_msg = {'message': 'Data inference successfully!'}
-    return jsonify(result_msg)
+        for model in model_list:
+            print('-' * 100)
+            print(str(model))
+            model.inference([np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)])
+            print('-' * 100)
+
+        token += 1
+        print()
+        print('#' * 100)
+
+        if token == num_token:
+            print(Model.get_result_list())
+            print('Завершение работы!')
+            sys.exit()
+
+        result_msg = {'message': 'Data inference successfully!'}
+        return jsonify(result_msg)
+
+    except Exception as exc:
+        print(str(exc))
 
 
 if __name__ == '__main__':
