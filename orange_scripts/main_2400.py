@@ -1,5 +1,4 @@
-from gnuradio import blocks
-from gnuradio import gr
+from gnuradio import blocks, gr
 import sys
 import signal
 import compose_send_data_2400 as my_freq
@@ -10,11 +9,12 @@ import subprocess
 import os
 import wiringpi as wpi
 from wiringpi import GPIO
-
 from dotenv import load_dotenv
+
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
+
 
 def light_diods_on_boot():
     pins = [11, 4, 3, 14, 12, 0, 1, 2, 5, 7]

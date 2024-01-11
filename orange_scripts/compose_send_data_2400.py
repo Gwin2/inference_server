@@ -1,9 +1,10 @@
+from dotenv import load_dotenv
 import numpy as np
+import requests
 import os
 import sys
-import requests
 import json
-from dotenv import load_dotenv
+
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 load_dotenv(dotenv_path)
@@ -40,6 +41,8 @@ class NumpyArrayEncoder(json.JSONEncoder):
 def send_data(sig):
     try:
         global token
+        print('#' * 10)
+        print('\nОтправка пакета ' + str(token+1))
         data_to_send = {
             "freq": 2400,
             "token": int(token+1),
@@ -49,13 +52,10 @@ def send_data(sig):
         mod_data_to_send = json.dumps(data_to_send, cls=NumpyArrayEncoder)
         response = requests.post("http://{0}:{1}/receive_data".format(server_ip, server_port), json=mod_data_to_send)
         if response.status_code == 200:
-            print('#' * 10)
             token += 1
-            print('TOKEN ' + str(token))
             print(response.text)
             print('#' * 10)
         else:
-            print('#' * 10)
             print("Ошибка при отправке данных: ", response.status_code)
             print('#' * 10)
         if int(num_token) == token:
