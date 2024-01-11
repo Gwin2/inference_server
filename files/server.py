@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify
 from dotenv import dotenv_values
 import matplotlib.pyplot as plt
 from files.Model import Model
-from gevent import pywsgi
 import numpy as np
 import importlib
 import json
@@ -71,8 +70,8 @@ def receive_data():
         print('#' * 100)
 
         if token == num_token:
-            print(Model.get_result_list())
-            print('Завершение работы!')
+            Model.get_result_list()
+            print('\nЗавершение работы!')
             sys.exit()
 
         result_msg = {'message': 'Data inference successfully!'}
@@ -85,5 +84,4 @@ def receive_data():
 if __name__ == '__main__':
     init_model_list()
     run_example()
-    #pywsgi.WSGIServer((config['SERVER_IP'], int(config['SERVER_PORT'])), app, log=None).serve_forever()
     app.run(host=config['SERVER_IP'], port=config['SERVER_PORT'])

@@ -15,7 +15,10 @@ def build_func_resnet18(file_model='', file_config='', num_classes=None):
                         config.model.architecture.rsplit('.', maxsplit=1)[1])()
         model.conv1 = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2),
                                                           padding=(3, 3), bias=False), model.conv1)
-        model.fc = nn.Linear(in_features=512, out_features=num_classes, bias=True)
+        model.fc = nn.Sequential(nn.Linear(in_features=512, out_features=128, bias=True),
+                                 nn.Linear(in_features=128, out_features=32, bias=True),
+                                 nn.Linear(in_features=32, out_features=3, bias=True)
+                                 )
 
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if device != 'cpu':
@@ -93,7 +96,7 @@ def inference_func_resnet18(data=None, model=None, mapping=None, shablon=''):
         label = np.asarray(np.argmax(output, axis=1))[0]
         output = np.asarray(torch.squeeze(output, 0))
         expon = np.exp(output - np.max(output))
-        probability = round((expon / expon.sum())[label], 3)
+        probability = round((expon / expon.sum())[label], 2)
         print('Уверенность' + shablon + ' в предсказании: ' + str(probability))
 
         print('Инференс завершен')

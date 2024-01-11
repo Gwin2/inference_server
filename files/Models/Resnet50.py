@@ -97,7 +97,7 @@ def inference_func_resnet50(data=None, model=None, mapping=None, shablon=''):
         label = np.asarray(np.argmax(output, axis=1))[0]
         output = np.asarray(torch.squeeze(output, 0))
         expon = np.exp(output - np.max(output))
-        probability = round((expon / expon.sum())[label], 3)
+        probability = round((expon / expon.sum())[label], 2)
         print('Уверенность' + shablon + ' в предсказании: ' + str(probability))
 
         print('Инференс завершен')
