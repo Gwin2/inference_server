@@ -17,10 +17,10 @@ class Model(object):
         try:
             num_inf = max(list(map(lambda x: x[0], list(Model._result_list.values())[0])))
             max_length_type_model = max(list(map(lambda x: len(x), [i for i in Model._result_list.keys()])))
-            num_gaps = (max_length_type_model + 4)*(Model._model_id+1) + 2*(Model._model_id+2)
+            num_gaps = (max_length_type_model + 4) * (Model._model_id + 1) + 2 * (Model._model_id + 2)
             print('_' * num_gaps)
 
-            print('||' + ' ' * (max_length_type_model+3) + '|', end='')
+            print('||' + ' ' * (max_length_type_model + 4) + '|', end='')
             for type_model in Model._result_list.keys():
                 print('|' + ' ' * ((max_length_type_model - len(type_model)) // 2 + 2), end='')
                 print(type_model, end='')
@@ -28,13 +28,15 @@ class Model(object):
             print('|')
 
             for ind_inf in range(num_inf):
-                print('||' + ' ' * ((max_length_type_model - len(str(ind_inf+1))) // 2 + 2), end='')
-                print(ind_inf+1, end='')
-                print(' ' * ((max_length_type_model - len(str(ind_inf+1))) // 2 + 2) + '|', end='')
+                print('||' + ' ' * ((max_length_type_model - len(str(ind_inf + 1))) // 2 + 2), end='')
+                print(str(ind_inf+1) if len(str(ind_inf+1)) % 2 == 0 else str(ind_inf+1)+' ', end='')
+                print(' ' * ((max_length_type_model - len(str(ind_inf + 1))) // 2 + 2) + '|', end='')
 
                 for type_model in Model._result_list.keys():
-                    to_print = Model._result_list[type_model][ind_inf][1] + ' ' + (str(Model._result_list[type_model][ind_inf][2])
-                                        if str(Model._result_list[type_model][ind_inf][2])[-1] != '0' else str(Model._result_list[type_model][ind_inf][2]) + ' ')
+                    to_print = Model._result_list[type_model][ind_inf][1] + ' ' + (
+                        str(Model._result_list[type_model][ind_inf][2])
+                        if len(str(Model._result_list[type_model][ind_inf][2])) != 3 else str(
+                            Model._result_list[type_model][ind_inf][2]) + ' ')
                     print('|' + ' ' * ((max_length_type_model - len(to_print)) // 2 + 2), end='')
                     print(to_print, end='')
                     print(' ' * ((max_length_type_model - len(to_print)) // 2 + 2) + '|', end='')
@@ -117,7 +119,7 @@ class Model(object):
                             count_attempt += 1
                             break
 
-                print('Тестовый инференс' + self._shablon + ' пройден с результатом ' + str(100*(count_access-1)/(count_attempt-1) + ' %'))
+                print('Тестовый инференс' + self._shablon + ' пройден с результатом ' + str(100 * (count_access - 1) / (count_attempt - 1) + ' %'))
                 print()
             else:
                 print('Нет данных для тестового инференса')
@@ -129,6 +131,6 @@ class Model(object):
         self._prepare_data(data=data)
         print('Инференс' + self._shablon)
         prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
-                                          shablon=self._shablon)
-        Model.append_in_result_list(self._type_model, list([self._ind_inference+1, prediction, probability]))
+                                                       shablon=self._shablon)
+        Model.append_in_result_list(self._type_model, list([self._ind_inference + 1, prediction, probability]))
         self._post_data(prediction=prediction)
