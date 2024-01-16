@@ -5,7 +5,7 @@ batch_size : 16
 # Classifier
 model :
   architecture : torchvision.models.resnet50
-  pretrained : False
+  pretrained : True
 
 # Optimizer
 optimizer :

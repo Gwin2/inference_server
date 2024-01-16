@@ -9,8 +9,11 @@ class Model(object):
 
     @staticmethod
     def get_model_id():
-        Model._model_id += 1
-        return Model._model_id
+        try:
+            Model._model_id += 1
+            return Model._model_id
+        except Exception as exc:
+            print(str(exc))
 
     @staticmethod
     def get_result_list():
@@ -55,34 +58,46 @@ class Model(object):
 
     def __init__(self, file_model='', file_config='', src_example='', src_result='', type_model='',
                  build_model_func=None, pre_func=None, inference_func=None, post_func=None, classes=None):
-        self._model_id = Model.get_model_id()
-        self._file_model = file_model
-        self._file_config = file_config
-        self._src_example = src_example
-        self._src_result = src_result
-        self._type_model = type_model
-        self._build_model_func = build_model_func
-        self._pre_func = pre_func
-        self._inference_func = inference_func
-        self._post_func = post_func
-        self._classes = classes
-        self._ind_inference = 0
-        self._data = None
-        self._shablon = ' Модель ' + str(self._model_id) + ' с типом ' + str(self._type_model)
-        self._model = self._build_model()
-        Model._result_list[type_model] = []
+        try:
+            self._model_id = Model.get_model_id()
+            self._file_model = file_model
+            self._file_config = file_config
+            self._src_example = src_example
+            self._src_result = src_result
+            self._type_model = type_model
+            self._build_model_func = build_model_func
+            self._pre_func = pre_func
+            self._inference_func = inference_func
+            self._post_func = post_func
+            self._classes = classes
+            self._ind_inference = 0
+            self._data = None
+            self._shablon = ' Модель ' + str(self._model_id) + ' с типом ' + str(self._type_model)
+            self._model = self._build_model()
+            Model._result_list[type_model] = []
+        except Exception as exc:
+            print(str(exc))
 
     def __str__(self):
-        return self._shablon + ' работает!' + '\n'
+        try:
+            return self._shablon + ' работает!' + '\n'
+        except Exception as exc:
+            print(str(exc))
 
     def _build_model(self):
-        print('Инициализация' + self._shablon)
-        return self._build_model_func(file_model=self._file_model, file_config=self._file_config,
-                                      num_classes=len(self._classes))
+        try:
+            print('Инициализация' + self._shablon)
+            return self._build_model_func(file_model=self._file_model, file_config=self._file_config,
+                                          num_classes=len(self._classes))
+        except Exception as exc:
+            print(str(exc))
 
     def _prepare_data(self, data=None):
-        print('Подготовка данных' + self._shablon)
-        self._data = self._pre_func(data)
+        try:
+            print('Подготовка данных' + self._shablon)
+            self._data = self._pre_func(data)
+        except Exception as exc:
+            print(str(exc))
 
     def _post_data(self, prediction=None):
         print('Постобработка данных' + self._shablon)
