@@ -57,6 +57,7 @@ def get_hack_id():
     else:
         print('Такого хака нет!')
 
+
 class get_center_freq(gr.top_block):
 
     def __init__(self):
@@ -91,6 +92,7 @@ class get_center_freq(gr.top_block):
         self.rtlsdr_source_0.set_antenna('', 0)
         self.rtlsdr_source_0.set_bandwidth(0, 0)
         self.rtlsdr_source_0.set_min_output_buffer(4096)
+
         def _prob_freq_probe():
             while True:
 
