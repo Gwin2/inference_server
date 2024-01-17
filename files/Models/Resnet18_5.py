@@ -101,7 +101,7 @@ def inference_func_resnet18(data=None, model=None, mapping=None, shablon=''):
 
         print('Инференс завершен')
         print()
-        return prediction, probability
+        return [prediction, probability]
 
     except Exception as exc:
         print(str(exc))

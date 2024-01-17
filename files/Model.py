@@ -5,13 +5,42 @@ import re
 
 class Model(object):
     _model_id = 0
+    _ind_inference = 0
     _result_list = dict()
 
     @staticmethod
     def get_model_id():
         try:
+            return Model._model_id
+        except Exception as exc:
+            print(str(exc))
+
+    @staticmethod
+    def _get_inc_model_id():
+        try:
             Model._model_id += 1
             return Model._model_id
+        except Exception as exc:
+            print(str(exc))
+
+    @staticmethod
+    def _get_ind_inference():
+        try:
+            return Model._ind_inference
+        except Exception as exc:
+            print(str(exc))
+
+    @staticmethod
+    def _inc_ind_inference():
+        try:
+            Model._ind_inference += 1
+        except Exception as exc:
+            print(str(exc))
+
+    @staticmethod
+    def _init_result_list(type_model=''):
+        try:
+            Model._result_list[type_model] = []
         except Exception as exc:
             print(str(exc))
 
@@ -50,7 +79,7 @@ class Model(object):
             print(str(exc))
 
     @staticmethod
-    def append_in_result_list(type_model='', list_to_append=None):
+    def _append_in_result_list(type_model='', list_to_append=None):
         try:
             Model._result_list[type_model].append(list_to_append)
         except Exception as exc:
@@ -59,7 +88,6 @@ class Model(object):
     def __init__(self, file_model='', file_config='', src_example='', src_result='', type_model='',
                  build_model_func=None, pre_func=None, inference_func=None, post_func=None, classes=None):
         try:
-            self._model_id = Model.get_model_id()
             self._file_model = file_model
             self._file_config = file_config
             self._src_example = src_example
@@ -70,11 +98,11 @@ class Model(object):
             self._inference_func = inference_func
             self._post_func = post_func
             self._classes = classes
-            self._ind_inference = 0
             self._data = None
             self._shablon = ' Модель ' + str(self._model_id) + ' с типом ' + str(self._type_model)
             self._model = self._build_model()
-            Model._result_list[type_model] = []
+            self._model_id = Model._get_inc_model_id() if self._model is not None else Model.get_model_id()
+            self._init_result_list(type_model=self._type_model)
         except Exception as exc:
             print(str(exc))
 
@@ -83,6 +111,9 @@ class Model(object):
             return self._shablon + ' работает!' + '\n'
         except Exception as exc:
             print(str(exc))
+
+    def get_shablon(self):
+        return self._shablon
 
     def _build_model(self):
         try:
@@ -103,9 +134,15 @@ class Model(object):
         print('Постобработка данных' + self._shablon)
         self._ind_inference += 1
         self._post_func(src=self._src_result, data=self._data, model_id=self._model_id, model_type=self._type_model,
-                        ind_inference=self._ind_inference, prediction=prediction)
+                        ind_inference=Model._get_ind_inference(), prediction=prediction)
 
-    def test_inference(self):
+    def get_test_inference(self):
+        try:
+            self._test_inference()
+        except Exception as exc:
+            print(str(exc))
+
+    def _test_inference(self):
         try:
             count_access = 1
             count_attempt = 1
@@ -142,10 +179,20 @@ class Model(object):
         except Exception as exc:
             print(str(exc))
 
-    def inference(self, data=None):
-        self._prepare_data(data=data)
-        print('Инференс' + self._shablon)
-        prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
-                                                       shablon=self._shablon)
-        Model.append_in_result_list(self._type_model, list([self._ind_inference + 1, prediction, probability]))
-        self._post_data(prediction=prediction)
+    def get_inference(self, data=None):
+        try:
+            self._inference(data=data)
+        except Exception as exc:
+            print(str(exc))
+
+    def _inference(self, data=None):
+        try:
+            self._prepare_data(data=data)
+            print('Инференс' + self._shablon)
+            prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
+                                                           shablon=self._shablon)
+            Model._append_in_result_list(self._type_model, list([self._get_ind_inference() + 1, prediction, probability]))
+            self._post_data(prediction=prediction)
+        except Exception as exc:
+            print(str(exc))
+            Model._append_in_result_list(self._type_model, list([self._get_ind_inference() + 1, 'None', 'None']))
