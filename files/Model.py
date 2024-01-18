@@ -5,7 +5,7 @@ import re
 
 class Model(object):
     _model_id = 0
-    _ind_inference = 0
+    _ind_inference = 1
     _result_list = dict()
 
     @staticmethod
@@ -24,14 +24,14 @@ class Model(object):
             print(str(exc))
 
     @staticmethod
-    def _get_ind_inference():
+    def get_ind_inference():
         try:
             return Model._ind_inference
         except Exception as exc:
             print(str(exc))
 
     @staticmethod
-    def _inc_ind_inference():
+    def get_inc_ind_inference():
         try:
             Model._ind_inference += 1
         except Exception as exc:
@@ -40,16 +40,16 @@ class Model(object):
     @staticmethod
     def _init_result_list(type_model=''):
         try:
-            Model._result_list[type_model] = []
+            Model._result_list[type_model] = {}
         except Exception as exc:
             print(str(exc))
 
     @staticmethod
     def get_result_list():
         try:
-            num_inf = max(list(map(lambda x: x[0], list(Model._result_list.values())[0])))
-            max_length_type_model = max(list(map(lambda x: len(x), [i for i in Model._result_list.keys()])))
-            num_gaps = (max_length_type_model + 4) * (Model._model_id + 1) + 2 * (Model._model_id + 2)
+            num_inf = max(list(map(int, list(Model._result_list.values())[0].keys())))
+            max_length_type_model = max([len(i) for i in Model._result_list.keys()])
+            num_gaps = (max_length_type_model + 4) * (len(Model._result_list) + 1) + 2 * (len(Model._result_list) + 2)
             print('_' * num_gaps)
 
             print('||' + ' ' * (max_length_type_model + 4) + '|', end='')
@@ -59,16 +59,17 @@ class Model(object):
                 print(' ' * ((max_length_type_model - len(type_model)) // 2 + 2) + '|', end='')
             print('|')
 
-            for ind_inf in range(num_inf):
-                print('||' + ' ' * ((max_length_type_model - len(str(ind_inf + 1))) // 2 + 2), end='')
-                print(str(ind_inf+1) if len(str(ind_inf+1)) % 2 == 0 else str(ind_inf+1)+' ', end='')
-                print(' ' * ((max_length_type_model - len(str(ind_inf + 1))) // 2 + 2) + '|', end='')
+            for ind_inf in range(1, num_inf+1):
+                print('||' + ' ' * ((max_length_type_model - len(str(ind_inf))) // 2 + 2), end='')
+                print(str(ind_inf) if len(str(ind_inf)) % 2 == 0 else str(ind_inf) + ' ', end='')
+                print(' ' * ((max_length_type_model - len(str(ind_inf))) // 2 + 2) + '|', end='')
 
-                for type_model in Model._result_list.keys():
-                    to_print = Model._result_list[type_model][ind_inf][1] + ' ' + (
-                        str(Model._result_list[type_model][ind_inf][2])
-                        if len(str(Model._result_list[type_model][ind_inf][2])) != 3 else str(
-                            Model._result_list[type_model][ind_inf][2]) + ' ')
+                for info_inference in Model._result_list.values():
+                    if len(info_inference[ind_inf]) != 0:
+                        to_print = info_inference[ind_inf][0] + ' ' + (str(info_inference[ind_inf][1])
+                                                if len(str(info_inference[ind_inf][1])) != 3 else str(info_inference[ind_inf][1]) + ' ')
+                    else:
+                        to_print = ' ' * max_length_type_model
                     print('|' + ' ' * ((max_length_type_model - len(to_print)) // 2 + 2), end='')
                     print(to_print, end='')
                     print(' ' * ((max_length_type_model - len(to_print)) // 2 + 2) + '|', end='')
@@ -79,9 +80,9 @@ class Model(object):
             print(str(exc))
 
     @staticmethod
-    def _append_in_result_list(type_model='', list_to_append=None):
+    def _add_in_result_list(type_model='', ind_inference=0, list_to_add=None):
         try:
-            Model._result_list[type_model].append(list_to_append)
+            Model._result_list[type_model][ind_inference] = list_to_add
         except Exception as exc:
             print(str(exc))
 
@@ -99,21 +100,27 @@ class Model(object):
             self._post_func = post_func
             self._classes = classes
             self._data = None
-            self._shablon = ' Модель ' + str(self._model_id) + ' с типом ' + str(self._type_model)
+            self._shablon = ' Модель ' + str(self._model_id+1) + ' с типом ' + str(self._type_model)
             self._model = self._build_model()
-            self._model_id = Model._get_inc_model_id() if self._model is not None else Model.get_model_id()
+            self._model_id = Model._get_inc_model_id()
             self._init_result_list(type_model=self._type_model)
         except Exception as exc:
             print(str(exc))
 
     def __str__(self):
         try:
-            return self._shablon + ' работает!' + '\n'
+            if self._model is None:
+                return self._shablon + ' не работает!' + '\n'
+            else:
+                return self._shablon + ' работает!' + '\n'
         except Exception as exc:
             print(str(exc))
 
     def get_shablon(self):
         return self._shablon
+
+    def get_model(self):
+        return self._model
 
     def _build_model(self):
         try:
@@ -134,7 +141,7 @@ class Model(object):
         print('Постобработка данных' + self._shablon)
         self._ind_inference += 1
         self._post_func(src=self._src_result, data=self._data, model_id=self._model_id, model_type=self._type_model,
-                        ind_inference=Model._get_ind_inference(), prediction=prediction)
+                        ind_inference=Model.get_ind_inference(), prediction=prediction)
 
     def get_test_inference(self):
         try:
@@ -187,12 +194,12 @@ class Model(object):
 
     def _inference(self, data=None):
         try:
+            Model._add_in_result_list(type_model=self._type_model, ind_inference=self.get_ind_inference(), list_to_add=[])
             self._prepare_data(data=data)
             print('Инференс' + self._shablon)
             prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
                                                            shablon=self._shablon)
-            Model._append_in_result_list(self._type_model, list([self._get_ind_inference() + 1, prediction, probability]))
+            Model._add_in_result_list(type_model=self._type_model, ind_inference=self.get_ind_inference(), list_to_add=[prediction, probability])
             self._post_data(prediction=prediction)
         except Exception as exc:
             print(str(exc))
-            Model._append_in_result_list(self._type_model, list([self._get_ind_inference() + 1, 'None', 'None']))

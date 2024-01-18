@@ -73,7 +73,6 @@ def pre_func_resnet18(data=None):
         img = np.asarray([img1, img2], dtype=np.float32)
 
         print('Подготовка данных завершена')
-        print(img.shape)
         return img
 
     except Exception as e:
