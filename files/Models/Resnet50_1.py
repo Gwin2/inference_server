@@ -27,6 +27,8 @@ def pre_func_resnet50(data=None):
         buf1.close()
         img1 = cv2.imdecode(img_arr1, 1)
         img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+        plt.clf()
+        plt.cla()
         plt.close()
 
         fig2 = plt.figure(figsize=figsize)
@@ -43,9 +45,11 @@ def pre_func_resnet50(data=None):
         buf.close()
         img = cv2.imdecode(img_arr, 1)
         img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        plt.clf()
+        plt.cla()
         plt.close()
-        img = np.asarray([img1, img2], dtype=np.float32)
 
+        img = np.asarray([img1, img2], dtype=np.float32)
         print('Подготовка данных завершена')
         print()
         return img

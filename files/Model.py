@@ -1,4 +1,7 @@
+import random
+from tqdm import tqdm
 import numpy as np
+import gc
 import os
 import re
 
@@ -87,7 +90,8 @@ class Model(object):
             print(str(exc))
 
     def __init__(self, file_model='', file_config='', src_example='', src_result='', type_model='',
-                 build_model_func=None, pre_func=None, inference_func=None, post_func=None, classes=None):
+                 build_model_func=None, pre_func=None, inference_func=None, post_func=None, classes=None,
+                 number_synthetic_examples=0, number_src_data_for_one_synthetic_example=0, path_to_src_dataset=''):
         try:
             self._file_model = file_model
             self._file_config = file_config
@@ -99,6 +103,10 @@ class Model(object):
             self._inference_func = inference_func
             self._post_func = post_func
             self._classes = classes
+            self._num_outputs = len(self._classes.keys())
+            self._number_synthetic_examples = number_synthetic_examples
+            self._number_src_data_for_one_synthetic_example = number_src_data_for_one_synthetic_example
+            self._path_to_src_dataset = path_to_src_dataset
             self._data = None
             self._shablon = ' Модель ' + str(self._model_id+1) + ' с типом ' + str(self._type_model)
             self._model = self._build_model()
@@ -122,8 +130,36 @@ class Model(object):
     def get_model(self):
         return self._model
 
+    def _create_synthetic_examples(self):
+        try:
+            print('Создание синтетических примеров: ' + self._shablon)
+
+            path_to_example_directory = os.path.join(self._src_example, self._type_model)
+            os.mkdir(path_to_example_directory)
+            for ind in tqdm(range(self._number_synthetic_examples)):
+                try:
+                    label = self._classes[random.randint(0, self._num_outputs-1)]
+                    path_to_src_directory = os.path.join(self._path_to_src_dataset, label)
+                    with open(path_to_src_directory + '/' + os.listdir(path_to_src_directory)[0], 'r+') as data_file:
+                        data = np.frombuffer(data_file.read(), dtype=np.float32)
+                    array_example = np.zeros(np.shape(data))
+                    for _ in range(self._number_src_data_for_one_synthetic_example):
+                        with open(path_to_src_directory + '/' + random.choice(os.listdir(path_to_src_directory)), 'r+') as data_file:
+                            data = np.frombuffer(data_file.read(), dtype=np.float32)
+                        array_example = np.sum([array_example, data], axis=0)
+                    np.save(path_to_example_directory + '/' + label + '_' + str(ind+1), array_example)
+                except Exception as exc:
+                    print(str(exc))
+
+            print('Создание синтетических примеров завершено!')
+            print()
+        except Exception as exc:
+            print(str(exc))
+            print()
+
     def _build_model(self):
         try:
+            self._create_synthetic_examples()
             print('Инициализация' + self._shablon)
             return self._build_model_func(file_model=self._file_model, file_config=self._file_config,
                                           num_classes=len(self._classes))

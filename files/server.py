@@ -2,15 +2,12 @@ from flask import Flask, request, jsonify
 from dotenv import dotenv_values
 import matplotlib.pyplot as plt
 from files.Model import Model
-from random import randint
-from tqdm import tqdm
 import numpy as np
 import importlib
 import shutil
 import json
 import sys
 import os
-import gc
 
 
 app = Flask(__name__)
@@ -21,26 +18,18 @@ config = dict(dotenv_values(".env"))
 num_token = int(config['NUM_TOKEN'])
 
 
-def init_src():
-    print('Создание синтетических примеров...')
-    shutil.rmtree(config['SRC_RESULT'])
-    os.mkdir(config['SRC_RESULT'])
-    make_example()
+def init_data_for_inference():
+    try:
+        shutil.rmtree(config['SRC_RESULT'])
+        os.mkdir(config['SRC_RESULT'])
+        shutil.rmtree(config['SRC_EXAMPLE'])
+        os.mkdir(config['SRC_EXAMPLE'])
+    except Exception as exc:
+        print(str(exc))
+        print()
 
-
-def make_example():
-    n_samples, n_samples_for_sample = int(config['NUM_EXAMPLES']), int(config['NUM_EXAMPLES_FOR_EXAMPLE'])
-    for _ in range(n_samples):
-        path_to_src = config['PATH_TO_SRC_EXAMPLE']
-        path_to_example = config['SRC_EXAMPLE']
-    print('Создание синтетических примеров завершено!')
-    print()
-
-
-def init_model_list():
     try:
         global model_list
-
         for key in config.keys():
             if key.startswith('NN_'):
                 params = config[key].split(' && ')
@@ -51,7 +40,8 @@ def init_model_list():
                 model = Model(file_model=params[0], file_config=params[1], src_example=params[2], src_result=params[3],
                               type_model=params[4], build_model_func=getattr(module, params[5]),
                               pre_func=getattr(module, params[6]), inference_func=getattr(module, params[7]),
-                              post_func=getattr(module, params[8]), classes=classes)
+                              post_func=getattr(module, params[8]), classes=classes, number_synthetic_examples=int(params[10]),
+                              number_src_data_for_one_synthetic_example=int(params[11]), path_to_src_dataset=params[12])
                 model_list.append(model)
     except Exception as exc:
         print(str(exc))
@@ -99,7 +89,6 @@ def receive_data():
 
 
 if __name__ == '__main__':
-    init_src()
-    init_model_list()
+    init_data_for_inference()
     run_example()
     app.run(host=config['SERVER_IP'], port=config['SERVER_PORT'])

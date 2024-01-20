@@ -8,6 +8,57 @@ import cv2
 import io
 
 
+def pre_func_resnet18(data=None):
+    try:
+        figsize = (16, 8)
+        dpi = 80
+
+        fig1 = plt.figure(figsize=figsize)
+        plt.axes(ylim=(-1, 1))
+        sig_real = data[0]
+        plt.plot(sig_real, color='black')
+        plt.gca().set_axis_off()
+        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        buf1 = io.BytesIO()
+        fig1.savefig(buf1, format="png", dpi=dpi)
+        buf1.seek(0)
+        img_arr1 = np.frombuffer(buf1.getvalue(), dtype=np.uint8)
+        buf1.close()
+        img1 = cv2.imdecode(img_arr1, 1)
+        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+        plt.clf()
+        plt.cla()
+        plt.close()
+
+        fig2 = plt.figure(figsize=figsize)
+        plt.axes(ylim=(-1, 1))
+        sig_imag = data[1]
+        plt.plot(sig_imag, color='black')
+        plt.gca().set_axis_off()
+        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        buf = io.BytesIO()
+        fig2.savefig(buf, format="png", dpi=dpi)
+        buf.seek(0)
+        img_arr = np.frombuffer(buf.getvalue(), dtype=np.uint8)
+        buf.close()
+        img = cv2.imdecode(img_arr, 1)
+        img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        plt.clf()
+        plt.cla()
+        plt.close()
+
+        img = np.asarray([img1, img2], dtype=np.float32)
+        print('Подготовка данных завершена')
+        print()
+        return img
+
+    except Exception as e:
+        print(str(e))
+        return None
+
+
 def build_func_resnet18(file_model='', file_config='', num_classes=None):
     try:
         config = mlconfig.load(file_config)
@@ -29,53 +80,6 @@ def build_func_resnet18(file_model='', file_config='', num_classes=None):
 
     except Exception as exc:
         print(str(exc))
-        return None
-
-
-def pre_func_resnet18(data=None):
-    try:
-        figsize = (16, 8)
-        dpi = 80
-
-        fig1 = plt.figure(figsize=figsize)
-        plt.axes(ylim=(-1, 1))
-        sig_real = data[0]
-        plt.plot(sig_real, color='black')
-        plt.gca().set_axis_off()
-        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-        plt.margins(0, 0)
-        buf1 = io.BytesIO()
-        fig1.savefig(buf1, format="png", dpi=dpi)
-        buf1.seek(0)
-        img_arr1 = np.frombuffer(buf1.getvalue(), dtype=np.uint8)
-        buf1.close()
-        img1 = cv2.imdecode(img_arr1, 1)
-        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-        plt.close()
-
-        fig2 = plt.figure(figsize=figsize)
-        plt.axes(ylim=(-1, 1))
-        sig_imag = data[1]
-        plt.plot(sig_imag, color='black')
-        plt.gca().set_axis_off()
-        plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
-        plt.margins(0, 0)
-        buf = io.BytesIO()
-        fig2.savefig(buf, format="png", dpi=dpi)
-        buf.seek(0)
-        img_arr = np.frombuffer(buf.getvalue(), dtype=np.uint8)
-        buf.close()
-        img = cv2.imdecode(img_arr, 1)
-        img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        plt.close()
-        img = np.asarray([img1, img2], dtype=np.float32)
-
-        print('Подготовка данных завершена')
-        print()
-        return img
-
-    except Exception as e:
-        print(str(e))
         return None
 
 
