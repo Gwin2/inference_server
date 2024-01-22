@@ -30,8 +30,6 @@ def light_diods_on_boot():
 
 
 def get_hack_id():
-    serial_number = os.getenv('HACK')
-    pos = None
     output = []
     try:
         command = 'lsusb -v -d 1d50:6089 | grep iSerial'
@@ -45,11 +43,6 @@ def get_hack_id():
     serial_numbers = [line.split()[-1] for line in output_lines]
     print(serial_numbers)
 
-    for i, number in enumerate(serial_numbers):
-        serial_number = number
-        if number == serial_number:
-            id = i
-            break
     id = 0
     if id is not None:
         print('HackId is: {0}'.format(id))
