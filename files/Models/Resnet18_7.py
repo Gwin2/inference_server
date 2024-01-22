@@ -8,7 +8,7 @@ import cv2
 import io
 
 
-def pre_func_resnet50(data=None):
+def pre_func_resnet18(data=None):
     try:
         figsize = (16, 8)
         dpi = 80
@@ -59,17 +59,16 @@ def pre_func_resnet50(data=None):
         return None
 
 
-def build_func_resnet50(file_model='', file_config='', num_classes=None):
+def build_func_resnet18(file_model='', file_config='', num_classes=None):
     try:
         config = mlconfig.load(file_config)
         model = getattr(import_module(config.model.architecture.rsplit('.', maxsplit=1)[0]),
                         config.model.architecture.rsplit('.', maxsplit=1)[1])()
         model.conv1 = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2),
                                                           padding=(3, 3), bias=False), model.conv1)
-        model.fc = nn.Sequential(nn.Linear(in_features=2048, out_features=512, bias=True),
-                                 nn.Linear(in_features=512, out_features=128, bias=True),
+        model.fc = nn.Sequential(nn.Linear(in_features=512, out_features=128, bias=True),
                                  nn.Linear(in_features=128, out_features=32, bias=True),
-                                 nn.Linear(in_features=32, out_features=num_classes, bias=True))
+                                 nn.Linear(in_features=32, out_features=3, bias=True))
 
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if device != 'cpu':
@@ -86,7 +85,7 @@ def build_func_resnet50(file_model='', file_config='', num_classes=None):
         return None
 
 
-def inference_func_resnet50(data=None, model=None, mapping=None, shablon=''):
+def inference_func_resnet18(data=None, model=None, mapping=None, shablon=''):
     try:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         img = torch.unsqueeze(torch.tensor(data), 0).to(device)
@@ -112,7 +111,7 @@ def inference_func_resnet50(data=None, model=None, mapping=None, shablon=''):
         return None
 
 
-def post_func_resnet50(src='', model_type='', prediction='', model_id=0, ind_inference=0, data=None):
+def post_func_resnet18(src='', model_type='', prediction='', model_id=0, ind_inference=0, data=None):
     try:
         fig, ax = plt.subplots()
         ax.imshow(data[0], cmap='gray')

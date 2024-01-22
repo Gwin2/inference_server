@@ -1,3 +1,5 @@
+import time
+
 from tqdm import tqdm
 import numpy as np
 import random
@@ -149,14 +151,14 @@ class Model(object):
                 try:
                     label = self._classes[random.randint(0, self._num_outputs-1)]
                     path_to_src_directory = os.path.join(self._path_to_src_dataset, label)
-                    with open(path_to_src_directory + '/' + os.listdir(path_to_src_directory)[0], 'r+') as data_file:
+                    with open(path_to_src_directory + '/' + os.listdir(path_to_src_directory)[0], 'rb') as data_file:
                         data = np.frombuffer(data_file.read(), dtype=np.float32)
                     array_example = np.zeros(np.shape(data))
                     for _ in range(self._number_src_data_for_one_synthetic_example):
-                        with open(path_to_src_directory + '/' + random.choice(os.listdir(path_to_src_directory)), 'r+') as data_file:
+                        with open(path_to_src_directory + '/' + random.choice(os.listdir(path_to_src_directory)), 'rb') as data_file:
                             data = np.frombuffer(data_file.read(), dtype=np.float32)
                         array_example = np.sum([array_example, data], axis=0)
-                    np.save(path_to_example_directory + '/' + label + '_' + str(ind+1), array_example)
+                    np.save(path_to_example_directory + '/' + label + '_' + str(ind+1), array_example / self._number_src_data_for_one_synthetic_example)
                 except Exception as exc:
                     print(str(exc))
 
@@ -198,12 +200,12 @@ class Model(object):
         try:
             count_access = 1
             count_attempt = 1
-            _, _, files = next(os.walk(self._src_example))
+            path_to_example = os.path.join(self._src_example, self._type_model)
+            _, _, files = next(os.walk(path_to_example))
 
             if files:
                 for file in files:
-                    self._src_example += file
-                    with open(self._src_example, 'r+') as data_file:
+                    with open(path_to_example + '/' + file, 'rb') as data_file:
                         self._data = np.frombuffer(data_file.read(), dtype=np.float32)
 
                     print()
