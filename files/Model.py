@@ -1,7 +1,6 @@
-import random
 from tqdm import tqdm
 import numpy as np
-import gc
+import random
 import os
 import re
 
@@ -50,6 +49,14 @@ class Model(object):
     @staticmethod
     def get_result_list():
         try:
+            def get_max(dict_inf=None):
+                try:
+                    return max([(len(i[0]) if len(i) else 0) for i in dict_inf.values()])
+                except Exception as error:
+                    print(str(error))
+                    return 0
+
+            max_length_label = max([get_max(i) for i in Model._result_list.values()])
             num_inf = max(list(map(int, list(Model._result_list.values())[0].keys())))
             max_length_type_model = max([len(i) for i in Model._result_list.keys()])
             num_gaps = (max_length_type_model + 4) * (len(Model._result_list) + 1) + 2 * (len(Model._result_list) + 2)
@@ -69,8 +76,10 @@ class Model(object):
 
                 for info_inference in Model._result_list.values():
                     if len(info_inference[ind_inf]) != 0:
-                        to_print = info_inference[ind_inf][0] + ' ' + (str(info_inference[ind_inf][1])
-                                                if len(str(info_inference[ind_inf][1])) != 3 else str(info_inference[ind_inf][1]) + ' ')
+                        length_gap_left = (max_length_label - len(info_inference[ind_inf][0])) // 2 + (max_length_label - len(info_inference[ind_inf][0])) % 2
+                        length_gap_right = (max_length_label - len(info_inference[ind_inf][0])) // 2 + 1
+                        to_print = (' ' * length_gap_left + info_inference[ind_inf][0] + ' ' * length_gap_right) + (str(info_inference[ind_inf][1])
+                                if len(str(info_inference[ind_inf][1])) != 3 else str(info_inference[ind_inf][1]) + ' ')
                     else:
                         to_print = ' ' * max_length_type_model
                     print('|' + ' ' * ((max_length_type_model - len(to_print)) // 2 + 2), end='')
