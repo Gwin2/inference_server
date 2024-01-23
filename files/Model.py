@@ -205,6 +205,7 @@ class Model(object):
 
             if files:
                 for file in files:
+                    print(file)
                     with open(path_to_example + '/' + file, 'rb') as data_file:
                         self._data = np.frombuffer(data_file.read(), dtype=np.float32)
 
@@ -212,23 +213,23 @@ class Model(object):
                     self._prepare_data(data=self._data)
 
                     print('Тестовый инференс' + self._shablon + ' попытка ' + str(count_attempt))
-                    prediction = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
+                    prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
                                                       shablon=self._shablon)
 
-                    for key in self._classes.keys():
-                        if self._classes[key] in re.split('[._/]', self._src_example):
-                            if int(key) == prediction:
-                                print('Тест ' + str(count_attempt) + ' пройден!')
+                    for value in self._classes.values():
+                        if value in re.split('[._/]', file):
+                            if value == prediction:
+                                print('Тест ' + str(count_attempt) + ' пройден!\n')
                                 count_access += 1
                             else:
-                                print('Тест ' + str(count_attempt) + ' провален!')
+                                print('Тест ' + str(count_attempt) + ' провален!\n')
                             count_attempt += 1
                             break
 
-                print('Тестовый инференс' + self._shablon + ' пройден с результатом ' + str(100 * (count_access - 1) / (count_attempt - 1) + ' %'))
+                print('\nТестовый инференс' + self._shablon + ' пройден с результатом ' + str(100 * (count_access - 1) / (count_attempt - 1)) + ' %')
                 print()
             else:
-                print('Нет данных для тестового инференса')
+                print('\nНет данных для тестового инференса')
 
         except Exception as exc:
             print(str(exc))
