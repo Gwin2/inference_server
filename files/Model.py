@@ -202,6 +202,7 @@ class Model(object):
             _, _, files = next(os.walk(path_to_example))
 
             if files:
+                ind_inference = 0
                 for file in files:
                     with open(path_to_example + '/' + file, 'rb') as data_file:
                         self._data = np.frombuffer(data_file.read(), dtype=np.float32)
@@ -225,7 +226,8 @@ class Model(object):
 
                     print()
                     print('Постобработка данных' + self._shablon)
-                    self._post_func(src=path_to_example, data=self._data, model_id=self._model_id, model_type=self._type_model, prediction=prediction)
+                    ind_inference += 1
+                    self._post_func(src=path_to_example+'/', data=self._data, ind_inference=ind_inference, model_id=self._model_id, model_type=self._type_model, prediction=prediction)
 
                 print('\nТестовый инференс' + self._shablon + ' пройден с результатом ' + str(100 * (count_access - 1) / (count_attempt - 1)) + ' %')
                 print()
