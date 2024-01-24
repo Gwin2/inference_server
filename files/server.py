@@ -71,6 +71,7 @@ def receive_data():
             print(str(model))
             model.get_inference([np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)])
             print('-' * 100)
+            print()
 
         Model.get_inc_ind_inference()
         print()

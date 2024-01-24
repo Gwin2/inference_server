@@ -1,5 +1,3 @@
-import time
-
 from tqdm import tqdm
 import numpy as np
 import random
@@ -81,7 +79,7 @@ class Model(object):
                         length_gap_left = (max_length_label - len(info_inference[ind_inf][0])) // 2 + (max_length_label - len(info_inference[ind_inf][0])) % 2
                         length_gap_right = (max_length_label - len(info_inference[ind_inf][0])) // 2 + 1
                         to_print = (' ' * length_gap_left + info_inference[ind_inf][0] + ' ' * length_gap_right) + (str(info_inference[ind_inf][1])
-                                if len(str(info_inference[ind_inf][1])) != 3 else str(info_inference[ind_inf][1]) + ' ')
+                                                                    if len(str(info_inference[ind_inf][1])) != 3 else str(info_inference[ind_inf][1]) + ' ')
                     else:
                         to_print = ' ' * max_length_type_model
                     print('|' + ' ' * ((max_length_type_model - len(to_print)) // 2 + 2), end='')
@@ -205,7 +203,6 @@ class Model(object):
 
             if files:
                 for file in files:
-                    print(file)
                     with open(path_to_example + '/' + file, 'rb') as data_file:
                         self._data = np.frombuffer(data_file.read(), dtype=np.float32)
 
@@ -214,7 +211,7 @@ class Model(object):
 
                     print('Тестовый инференс' + self._shablon + ' попытка ' + str(count_attempt))
                     prediction, probability = self._inference_func(data=self._data, model=self._model, mapping=self._classes,
-                                                      shablon=self._shablon)
+                                                                   shablon=self._shablon)
 
                     for value in self._classes.values():
                         if value in re.split('[._/]', file):
@@ -225,6 +222,10 @@ class Model(object):
                                 print('Тест ' + str(count_attempt) + ' провален!\n')
                             count_attempt += 1
                             break
+
+                    print()
+                    print('Постобработка данных' + self._shablon)
+                    self._post_func(src=path_to_example, data=self._data, model_id=self._model_id, model_type=self._type_model, prediction=prediction)
 
                 print('\nТестовый инференс' + self._shablon + ' пройден с результатом ' + str(100 * (count_access - 1) / (count_attempt - 1)) + ' %')
                 print()

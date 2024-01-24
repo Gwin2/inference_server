@@ -68,8 +68,7 @@ def build_func_resnet18(file_model='', file_config='', num_classes=None):
                                                           padding=(3, 3), bias=False), model.conv1)
         model.fc = nn.Sequential(nn.Linear(in_features=512, out_features=128, bias=True),
                                  nn.Linear(in_features=128, out_features=32, bias=True),
-                                 nn.Linear(in_features=32, out_features=3, bias=True)
-                                 )
+                                 nn.Linear(in_features=32, out_features=num_classes, bias=True))
 
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
         if device != 'cpu':
@@ -117,9 +116,14 @@ def post_func_resnet18(src='', model_type='', prediction='', model_id=0, ind_inf
         fig, ax = plt.subplots()
         ax.imshow(data[0], cmap='gray')
         plt.savefig(src + '_inference_' + str(ind_inference) + '_' + prediction + '_real_' + str(model_id) + '_' + model_type + '.png')
+        plt.clf()
+        plt.cla()
+        plt.close()
         fig, ax = plt.subplots()
         ax.imshow(data[1], cmap='gray')
         plt.savefig(src + '_inference_' + str(ind_inference) + '_' + prediction + '_imag_' + str(model_id) + '_' + model_type + '.png')
+        plt.clf()
+        plt.cla()
         plt.close()
 
         print('Постобработка завершена')

@@ -1,3 +1,4 @@
+import torchsig.transforms.transforms as transform
 from importlib import import_module
 import matplotlib.pyplot as plt
 import torch.nn as nn
@@ -10,13 +11,17 @@ import io
 
 def pre_func_resnet50(data=None):
     try:
-        figsize = (16, 8)
-        dpi = 80
+        figsize = (16, 16)
+        dpi = 64
+
+        spec = transform.Spectrogram(nperseg=1024)
+        spectr = np.array(spec(data)[:, :figsize[0] * dpi])
 
         fig1 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
-        sig_real = data[0]
-        plt.plot(sig_real, color='black')
+        sigr = data[0]
+
+        plt.plot(sigr, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
         plt.margins(0, 0)
@@ -33,8 +38,9 @@ def pre_func_resnet50(data=None):
 
         fig2 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
-        sig_imag = data[1]
-        plt.plot(sig_imag, color='black')
+        sigi = data[1]
+
+        plt.plot(sigi, color='black')
         plt.gca().set_axis_off()
         plt.subplots_adjust(top=1, bottom=0, right=1, left=0, hspace=0, wspace=0)
         plt.margins(0, 0)
@@ -49,9 +55,7 @@ def pre_func_resnet50(data=None):
         plt.cla()
         plt.close()
 
-        img = np.asarray([img1, img2], dtype=np.float32)
-        print('Подготовка данных завершена')
-        print()
+        img = np.array([img1, img2, spectr])
         return img
 
     except Exception as e:
@@ -64,8 +68,7 @@ def build_func_resnet50(file_model='', file_config='', num_classes=None):
         config = mlconfig.load(file_config)
         model = getattr(import_module(config.model.architecture.rsplit('.', maxsplit=1)[0]),
                         config.model.architecture.rsplit('.', maxsplit=1)[1])()
-        model.conv1 = torch.nn.Sequential(torch.nn.Conv2d(2, 3, kernel_size=(7, 7), stride=(2, 2),
-                                                          padding=(3, 3), bias=False), model.conv1)
+
         model.fc = nn.Sequential(nn.Linear(in_features=2048, out_features=512, bias=True),
                                  nn.Linear(in_features=512, out_features=128, bias=True),
                                  nn.Linear(in_features=128, out_features=32, bias=True),
@@ -123,6 +126,12 @@ def post_func_resnet50(src='', model_type='', prediction='', model_id=0, ind_inf
         fig, ax = plt.subplots()
         ax.imshow(data[1], cmap='gray')
         plt.savefig(src + '_inference_' + str(ind_inference) + '_' + prediction + '_imag_' + str(model_id) + '_' + model_type + '.png')
+        plt.clf()
+        plt.cla()
+        plt.close()
+        fig, ax = plt.subplots()
+        ax.imshow(data[2], cmap='gray')
+        plt.savefig(src + '_inference_' + str(ind_inference) + '_' + prediction + '_spec_' + str(model_id) + '_' + model_type + '.png')
         plt.clf()
         plt.cla()
         plt.close()
