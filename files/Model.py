@@ -139,36 +139,8 @@ class Model(object):
     def get_model(self):
         return self._model
 
-    def _create_synthetic_examples(self):
-        try:
-            print('Создание синтетических примеров: ' + self._shablon)
-
-            path_to_example_directory = os.path.join(self._src_example, self._type_model)
-            os.mkdir(path_to_example_directory)
-            for ind in tqdm(range(self._number_synthetic_examples)):
-                try:
-                    label = self._classes[random.randint(0, self._num_outputs-1)]
-                    path_to_src_directory = os.path.join(self._path_to_src_dataset, label)
-                    with open(path_to_src_directory + '/' + os.listdir(path_to_src_directory)[0], 'rb') as data_file:
-                        data = np.frombuffer(data_file.read(), dtype=np.float32)
-                    array_example = np.zeros(np.shape(data))
-                    for _ in range(self._number_src_data_for_one_synthetic_example):
-                        with open(path_to_src_directory + '/' + random.choice(os.listdir(path_to_src_directory)), 'rb') as data_file:
-                            data = np.frombuffer(data_file.read(), dtype=np.float32)
-                        array_example = np.sum([array_example, data], axis=0)
-                    np.save(path_to_example_directory + '/' + label + '_' + str(ind+1), array_example / self._number_src_data_for_one_synthetic_example)
-                except Exception as exc:
-                    print(str(exc))
-
-            print('Создание синтетических примеров завершено!')
-            print()
-        except Exception as exc:
-            print(str(exc))
-            print()
-
     def _build_model(self):
         try:
-            self._create_synthetic_examples()
             print('Инициализация' + self._shablon)
             return self._build_model_func(file_model=self._file_model, file_config=self._file_config,
                                           num_classes=len(self._classes))
@@ -194,8 +166,38 @@ class Model(object):
         except Exception as exc:
             print(str(exc))
 
+    def _create_synthetic_examples(self):
+        try:
+            print('#' * 100)
+            print('Создание синтетических примеров: ' + self._shablon)
+
+            path_to_example_directory = os.path.join(self._src_example, self._type_model)
+            os.mkdir(path_to_example_directory)
+            for ind in tqdm(range(self._number_synthetic_examples)):
+                try:
+                    label = self._classes[random.randint(0, self._num_outputs-1)]
+                    path_to_src_directory = os.path.join(self._path_to_src_dataset, label)
+                    with open(path_to_src_directory + '/' + os.listdir(path_to_src_directory)[0], 'rb') as data_file:
+                        data = np.frombuffer(data_file.read(), dtype=np.float32)
+                    array_example = np.zeros(np.shape(data))
+                    for _ in range(self._number_src_data_for_one_synthetic_example):
+                        with open(path_to_src_directory + '/' + random.choice(os.listdir(path_to_src_directory)), 'rb') as data_file:
+                            data = np.frombuffer(data_file.read(), dtype=np.float32)
+                        array_example = np.sum([array_example, data], axis=0)
+                    np.save(path_to_example_directory + '/' + label + '_' + str(ind+1), array_example / self._number_src_data_for_one_synthetic_example)
+                except Exception as exc:
+                    print(str(exc))
+
+            print('Создание синтетических примеров завершено!')
+            print()
+        except Exception as exc:
+            print(str(exc))
+            print()
+
     def _test_inference(self):
         try:
+            self._create_synthetic_examples()
+
             count_access = 1
             count_attempt = 1
             path_to_example = os.path.join(self._src_example, self._type_model)
@@ -230,6 +232,7 @@ class Model(object):
                     self._post_func(src=path_to_example+'/', data=self._data, ind_inference=ind_inference, model_id=self._model_id, model_type=self._type_model, prediction=prediction)
 
                 print('\nТестовый инференс' + self._shablon + ' пройден с результатом ' + str(100 * (count_access - 1) / (count_attempt - 1)) + ' %')
+                print('#' * 100)
                 print()
             else:
                 print('\nНет данных для тестового инференса')

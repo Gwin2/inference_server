@@ -14,8 +14,9 @@ def pre_func_resnet50(data=None):
         figsize = (16, 16)
         dpi = 64
 
+        signal = np.vectorize(complex)(data[0], data[1])
         spec = transform.Spectrogram(nperseg=1024)
-        spectr = np.array(spec(data)[:, :figsize[0] * dpi])
+        spectr = np.array(spec(signal)[:, :figsize[0] * dpi])
 
         fig1 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
@@ -56,6 +57,8 @@ def pre_func_resnet50(data=None):
         plt.close()
 
         img = np.array([img1, img2, spectr])
+        print('Подготовка данных завершена')
+        print()
         return img
 
     except Exception as e:

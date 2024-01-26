@@ -91,5 +91,5 @@ def receive_data():
 
 if __name__ == '__main__':
     init_data_for_inference()
-    run_example()
+    # run_example()
     app.run(host=config['SERVER_IP'], port=config['SERVER_PORT'])

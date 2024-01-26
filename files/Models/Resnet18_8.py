@@ -14,9 +14,9 @@ def pre_func_resnet18(data=None):
         figsize = (16, 16)
         dpi = 64
 
+        signal = np.vectorize(complex)(data[0], data[1])
         spec = transform.Spectrogram(nperseg=1024)
-        spectr = np.array(spec(data)[:, :figsize[0] * dpi])
-
+        spectr = np.array(spec(signal)[:, :figsize[0] * dpi])
         fig1 = plt.figure(figsize=figsize)
         plt.axes(ylim=(-1, 1))
         sigr = data[0]
@@ -32,6 +32,7 @@ def pre_func_resnet18(data=None):
         buf1.close()
         img1 = cv2.imdecode(img_arr1, 1)
         img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+
         plt.clf()
         plt.cla()
         plt.close()
@@ -56,6 +57,8 @@ def pre_func_resnet18(data=None):
         plt.close()
 
         img = np.array([img1, img2, spectr])
+        print('Подготовка данных завершена')
+        print()
         return img
 
     except Exception as e:
@@ -91,14 +94,14 @@ def build_func_resnet18(file_model='', file_config='', num_classes=None):
 def inference_func_resnet18(data=None, model=None, mapping=None, shablon=''):
     try:
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        img = torch.unsqueeze(torch.tensor(data), 0).to(device)
-
+        img = torch.tensor(data).to(device)
+        # img = torch.unsqueeze(torch.tensor(data), 0).to(device)
         with torch.no_grad():
             output = model(img)
+            print(1)
             _, predict = torch.max(output.data, 1)
         prediction = mapping[int(np.asarray(predict.cpu())[0])]
         print('PREDICTION' + shablon + ': ' + prediction)
-
         label = np.asarray(np.argmax(output, axis=1))[0]
         output = np.asarray(torch.squeeze(output, 0))
         expon = np.exp(output - np.max(output))
