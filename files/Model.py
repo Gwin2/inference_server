@@ -236,6 +236,7 @@ class Model(object):
                 print()
             else:
                 print('\nНет данных для тестового инференса')
+                print()
 
         except Exception as exc:
             print(str(exc))

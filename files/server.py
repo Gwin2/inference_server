@@ -20,9 +20,11 @@ num_token = int(config['NUM_TOKEN'])
 
 def init_data_for_inference():
     try:
-        shutil.rmtree(config['SRC_RESULT'])
+        if os.path.isdir(config['SRC_RESULT']):
+            shutil.rmtree(config['SRC_RESULT'])
         os.mkdir(config['SRC_RESULT'])
-        shutil.rmtree(config['SRC_EXAMPLE'])
+        if os.path.isdir(config['SRC_EXAMPLE']):
+            shutil.rmtree(config['SRC_EXAMPLE'])
         os.mkdir(config['SRC_EXAMPLE'])
     except Exception as exc:
         print(str(exc))
@@ -91,5 +93,5 @@ def receive_data():
 
 if __name__ == '__main__':
     init_data_for_inference()
-    # run_example()
+    run_example()
     app.run(host=config['SERVER_IP'], port=config['SERVER_PORT'])
