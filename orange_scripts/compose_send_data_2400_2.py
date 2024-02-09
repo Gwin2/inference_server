@@ -11,7 +11,7 @@ load_dotenv(dotenv_path)
 server_ip = os.getenv('SERVER_IP')
 server_port = os.getenv('SERVER_PORT')
 num_token = os.getenv('NUM_TOKEN')
-PARAMS = {'split_size': 400_000}
+PARAMS = {'split_size': 2_000_000, 'split_chank': 400_000}
 token = 0
 
 ##############################
@@ -20,6 +20,7 @@ token = 0
 f_base = 2.5e9
 f_step = -20e6
 f_roof = 2.4e9
+ind = 1
 ##############################
 # Variables
 ##############################
@@ -72,8 +73,10 @@ def work(lvl):
     global f
     global EOCF
     global signal_arr
+    global length
 
     y = np.array(lvl).ravel()
+    print(len(y))
     signal_arr = np.concatenate((signal_arr, y), axis=None)
 
     if f <= f_roof:
@@ -83,6 +86,10 @@ def work(lvl):
     else:
         if len(signal_arr) >= PARAMS['split_size']:
             send_data(signal_arr[:PARAMS['split_size']])
+            ind = 1
             signal_arr = []
+        elif len(signal_arr) >= PARAMS['split_chank']*ind:
+            signal_arr = signal_arr[:PARAMS['split_chank']*ind]
+            ind+=1
             f += f_step
         return f, EOCF

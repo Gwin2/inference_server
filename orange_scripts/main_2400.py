@@ -1,7 +1,7 @@
 from gnuradio import blocks, gr
 import sys
 import signal
-import compose_send_data_2400 as my_freq
+import compose_send_data_2400_2 as my_freq
 import osmosdr
 import time
 import threading
