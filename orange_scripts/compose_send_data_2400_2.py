@@ -73,10 +73,9 @@ def work(lvl):
     global f
     global EOCF
     global signal_arr
-    global length
+    global ind
 
     y = np.array(lvl).ravel()
-    print(len(y))
     signal_arr = np.concatenate((signal_arr, y), axis=None)
 
     if f <= f_roof:
