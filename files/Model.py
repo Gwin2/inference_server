@@ -183,7 +183,7 @@ class Model(object):
                     for _ in range(self._number_src_data_for_one_synthetic_example):
                         with open(path_to_src_directory + '/' + random.choice(os.listdir(path_to_src_directory)), 'rb') as data_file:
                             data = np.frombuffer(data_file.read(), dtype=np.float32)
-                        array_example = np.sum([array_example, data], axis=0)
+                        array_example = np.add(array_example, data)
                     np.save(path_to_example_directory + '/' + label + '_' + str(ind+1), array_example / self._number_src_data_for_one_synthetic_example)
                 except Exception as exc:
                     print(str(exc))

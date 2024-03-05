@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from files.Algorithm import Algorithm
 from dotenv import dotenv_values
 import matplotlib.pyplot as plt
 from files.Model import Model
@@ -13,9 +14,12 @@ import os
 app = Flask(__name__)
 plt.switch_backend('agg')
 
+
+alg_list = []
 model_list = []
 config = dict(dotenv_values(".env"))
-num_token = int(config['NUM_TOKEN'])
+num_token_nn = int(config['NUM_TOKEN_NN'])
+num_token_alg = int(config['NUM_TOKEN_ALG'])
 
 
 def init_data_for_inference():
@@ -45,6 +49,16 @@ def init_data_for_inference():
                               post_func=getattr(module, params[8]), classes=classes, number_synthetic_examples=int(params[10]),
                               number_src_data_for_one_synthetic_example=int(params[11]), path_to_src_dataset=params[12])
                 model_list.append(model)
+            if key.startswith('ALG_'):
+                params = config[key].split(' && ')
+                module = importlib.import_module('files.Algorithms.' + params[2])
+                classes = {}
+                for value in params[6][1:-1].split(','):
+                    classes[len(classes)] = value
+                alg = Algorithm(src_example=params[0], src_result=params[1], type_alg=params[2], pre_func=getattr(module, params[3]),
+                                inference_func=getattr(module, params[4]), post_func=getattr(module, params[5]), classes=classes,
+                                number_synthetic_examples=int(params[7]), number_src_data_for_one_synthetic_example=int(params[8]), path_to_src_dataset=params[9])
+                alg_list.append(alg)
     except Exception as exc:
         print(str(exc))
         print()
@@ -79,8 +93,24 @@ def receive_data():
         print()
         print('#' * 100)
 
-        if Model.get_ind_inference() == num_token+1:
+        if Model.get_ind_inference() == num_token_nn + 1:
             Model.get_result_list()
+            print('\nЗавершение работы!')
+            sys.exit()
+
+        for alg in alg_list:
+            print('-' * 100)
+            print(str(alg))
+            alg.get_inference([np.asarray(data['data_real'], dtype=np.float32), np.asarray(data['data_imag'], dtype=np.float32)])
+            print('-' * 100)
+            print()
+
+        Algorithm.get_inc_ind_inference()
+        print()
+        print('#' * 100)
+
+        if Algorithm.get_ind_inference() == num_token_alg + 1:
+            Algorithm.get_result_list()
             print('\nЗавершение работы!')
             sys.exit()
 
@@ -93,5 +123,5 @@ def receive_data():
 
 if __name__ == '__main__':
     init_data_for_inference()
-    run_example()
+    # run_example()
     app.run(host=config['SERVER_IP'], port=config['SERVER_PORT'])
